@@ -1,0 +1,4 @@
+cat|mammal,pet
+# ignore
+dog|mammal,pet
+fox|mammal,wild

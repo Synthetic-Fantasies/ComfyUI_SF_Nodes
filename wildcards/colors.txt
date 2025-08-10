@@ -1,0 +1,4 @@
+red|Primary,WARM
+# blue
+
+ green | secondary , cool 
