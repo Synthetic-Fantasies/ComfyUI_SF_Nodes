@@ -13,8 +13,12 @@ pip install --upgrade pip
 
 ### Install into ComfyUI
 - Copy or symlink this folder into your ComfyUI `custom_nodes` directory and restart ComfyUI.
-
-Example symlink (adjust the ComfyUI path):
+- Or install via git:
+```bash
+cd /path/to/ComfyUI/custom_nodes
+git clone git@github.com:Synthetic-Fantasies/ComfyUI_SF_Nodes.git
+```
+Symlink example (adjust the ComfyUI path):
 ```bash
 ln -s "$(pwd)" ~/ComfyUI/custom_nodes/ComfyUI_SF_Nodes
 ```
@@ -26,4 +30,21 @@ python -c "import sf_hello_nodes as m; print('Loaded nodes:', list(m.NODE_CLASS_
 ```
 
 ### Included nodes
-- `SFHello` (category: `SF/Utility`): returns a greeting string.
+- `SFWildcardsPromptMatrixExt` (category: `SF/Text`)
+  - Replaces `__token__` wildcards using ComfyUI's global wildcards directory (or `COMFYUI_WILDCARDS_DIR`, fallback `./wildcards`).
+  - Uses text before `|` for replacement, captures labels after `|` as lowercase unique tags.
+  - Outputs:
+    - `prompts`: list of expanded prompts
+    - `wildcard_lines`: list of concatenated `[filename:line]` tags per prompt
+    - `tags`: comma-joined unique, lowercased labels per prompt
+    - `tags_list`: list of unique, lowercased label tokens per prompt
+    - `wildcards_dir`: resolved directory path used
+
+- `SFPreviewCompare` (category: `SF/Preview`)
+  - Compare A/B images with circular `index` across arrays of IMAGE.
+  - Modes: `A`, `B`, `SideBySide` (resizes to same height and concatenates).
+  - UI adds ◀ ▶ buttons to change `index` quickly.
+
+- `SFTextConcat` (category: `SF/Text`): simple text concatenation.
+- `SFMathOps` (category: `SF/Math`): add/sub/mul/div of floats.
+- `SFImagePassthrough`, `SFImageGrayscale` (category: `SF/Image`): basic image ops.
