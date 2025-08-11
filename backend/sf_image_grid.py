@@ -126,7 +126,7 @@ def _choose_layout_by_sizes(sizes: List[Tuple[int, int]], target_ratio: float = 
     return best_layout
 
 
-class SFImageGridAuto:
+class SFImageGrid:
     @classmethod
     def INPUT_TYPES(cls):
         return {

@@ -1,18 +1,18 @@
 # Aggregate all node class mappings for ComfyUI
-from .nodes.sf_nodes_wildcards import SFWildcardsPromptMatrixExt
-from .nodes.sf_nodes_preview import SFPreviewCompare
-from .nodes.sf_nodes_grid import SFImageGridAuto
+from .backend.sf_nodes_wildcards import SFWildcardsPromptMatrixExt
+from .backend.sf_compare_image import SFCompareImage
+from .backend.sf_image_grid import SFImageGrid
 
 NODE_CLASS_MAPPINGS = {
     "SFWildcardsPromptMatrixExt": SFWildcardsPromptMatrixExt,
-    "SFPreviewCompare": SFPreviewCompare,
-    "SFImageGridAuto": SFImageGridAuto,
+    "SFCompare": SFCompareImage,
+    "SFImageGrid": SFImageGrid,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "SFWildcardsPromptMatrixExt": "SF Wildcards Prompt Matrix+",
-    "SFPreviewCompare": "SF Preview Compare (A/B)",
-    "SFImageGridAuto": "SF Image Grid (Auto Portrait)",
+    "SFCompare": "SF Compare",
+    "SFImageGrid": "SF Image Grid",
 }
 
 
