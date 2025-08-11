@@ -135,6 +135,7 @@ class SFImageGridAuto:
             },
             "optional": {
                 "favor_portrait": ("BOOLEAN", {"default": True}),
+                "pad_to_multiple": ("INT", {"default": 8, "min": 1, "max": 128}),
                 "filename_prefix": ("STRING", {"default": "SFGrid"}),
                 "save_result": ("BOOLEAN", {"default": False}),
             },
@@ -145,7 +146,7 @@ class SFImageGridAuto:
     FUNCTION = "make_grid"
     CATEGORY = "SF/Image"
 
-    def make_grid(self, images, favor_portrait: bool = True, filename_prefix: str = "SFGrid", save_result: bool = False):
+    def make_grid(self, images, favor_portrait: bool = True, pad_to_multiple: int = 8, filename_prefix: str = "SFGrid", save_result: bool = False):
         _ensure_torch()
         img_list = _to_list_of_images(images)
         if not img_list:
@@ -191,24 +192,16 @@ class SFImageGridAuto:
                     idx += 1
                 y_cursor += row_h
             canvas = canvas.clamp(0.0, 1.0).contiguous()
-        # Create UI preview in temp and optionally save to disk using ComfyUI's folder_paths conventions
-        ui_images = []
-        try:
-            import os, time
-            import folder_paths  # type: ignore
-            temp_dir = folder_paths.get_temp_directory()
-            os.makedirs(temp_dir, exist_ok=True)
-            preview_name = f"sfgrid_{int(time.time()*1000)}.png"
-            if Image is not None and 'grid_pil' in locals():
-                grid_pil.save(os.path.join(temp_dir, preview_name))
-            else:
-                from PIL import Image as _Image
-                arr = (canvas[0].detach().cpu().clamp(0, 1).numpy() * 255).astype("uint8")
-                _Image.fromarray(arr, mode="RGB").save(os.path.join(temp_dir, preview_name))
-            ui_images.append({"filename": preview_name, "subfolder": "", "type": "temp"})
-        except Exception:
-            pass
-
+        # Optionally pad to nearest multiple (height/width) for downstream node compatibility
+        if isinstance(pad_to_multiple, int) and pad_to_multiple > 1:
+            mul = pad_to_multiple
+            h, w = int(canvas.shape[1]), int(canvas.shape[2])
+            pad_h = (mul - (h % mul)) % mul
+            pad_w = (mul - (w % mul)) % mul
+            if pad_h or pad_w:
+                canvas = torch.nn.functional.pad(
+                    canvas, (0, 0, 0, pad_w, 0, pad_h), mode="constant", value=0.0
+                )
         # Optionally save to output directory
         if save_result:
             try:
@@ -244,8 +237,6 @@ class SFImageGridAuto:
             except Exception:
                 # Best-effort save; ignore failures at UI/runtime
                 pass
-        if ui_images:
-            return (canvas,), {"ui": {"images": ui_images}}
         return (canvas,)
 
 NODE_CLASS_MAPPINGS = {
