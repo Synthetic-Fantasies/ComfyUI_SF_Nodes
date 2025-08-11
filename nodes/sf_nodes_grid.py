@@ -137,7 +137,15 @@ class SFImageGridAuto:
                         filename_prefix or "SFGrid", output_dir
                     )
                     os.makedirs(full_output_folder, exist_ok=True)
-                    file_path = os.path.join(full_output_folder, filename)
+                    # Mirror common SaveImage naming: <prefix>_<counter>.png
+                    # If the helper exists, use it to get the next number
+                    try:
+                        next_num = folder_paths.get_next_sequence_number(full_output_folder, used_prefix)
+                        counter = max(counter, next_num)
+                    except Exception:
+                        pass
+                    final_name = f"{used_prefix}_{counter:05d}.png"
+                    file_path = os.path.join(full_output_folder, final_name)
                 except Exception:
                     os.makedirs("output", exist_ok=True)
                     from time import time as _now
