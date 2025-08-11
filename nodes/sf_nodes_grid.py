@@ -93,8 +93,13 @@ class SFImageGridAuto:
         n = len(img_list)
         rows, cols = _choose_portrait_grid(n)
         row_height = 256
-        # Resize each image to common row height, preserve aspect
-        tiles = [_resize_preserve_height(im, row_height) for im in img_list]
+        # Resize each image to common row height, preserve aspect; ensure CPU float32 NHWC contiguous
+        tiles = [
+            _resize_preserve_height(im, row_height)
+            .to(dtype=torch.float32, device="cpu")
+            .contiguous()
+            for im in img_list
+        ]
         # Compute per-row widths and overall canvas size
         row_widths: List[int] = []
         for r in range(rows):
@@ -110,7 +115,7 @@ class SFImageGridAuto:
         if canvas_w <= 0 or canvas_h <= 0:
             raise ValueError("Computed invalid canvas size")
         # Compose canvas (NHWC), no letterboxing inside tiles; right side of shorter rows remains empty
-        canvas = torch.zeros((1, canvas_h, canvas_w, 3), dtype=tiles[0].dtype, device=tiles[0].device)
+        canvas = torch.zeros((1, canvas_h, canvas_w, 3), dtype=torch.float32, device="cpu")
         for i, tile in enumerate(tiles):
             r = i // cols
             # Place sequentially across the row
@@ -125,6 +130,7 @@ class SFImageGridAuto:
             x0 = x_offset
             x1 = x0 + int(tile.shape[2])
             canvas[:, y0:y1, x0:x1, :] = tile
+        canvas = canvas.clamp(0.0, 1.0).contiguous()
         # Optionally save to disk using ComfyUI's folder_paths conventions
         if save_result:
             try:

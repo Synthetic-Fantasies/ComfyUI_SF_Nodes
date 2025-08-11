@@ -81,16 +81,19 @@ class SFPreviewCompare:
         b = _pick_first_batch(b)
 
         a, b = _resize_to_same_height(a, b)
-        # If channel counts differ (e.g., 1 vs 3), expand to 3
-        def ensure_3c(t):
+        # Normalize to float32 NHWC on CPU, 3 channels
+        def to_rgb_float_nhwc_cpu(t):
             c = t.shape[-1]
             if c == 1:
-                return t.repeat(1, 1, 1, 3)
-            return t
-        a = ensure_3c(a)
-        b = ensure_3c(b)
+                t = t.repeat(1, 1, 1, 3)
+            elif c >= 3:
+                t = t[..., :3]
+            return t.to(dtype=torch.float32, device="cpu").contiguous()
+
+        a = to_rgb_float_nhwc_cpu(a)
+        b = to_rgb_float_nhwc_cpu(b)
         # Always output side-by-side combined image so UI can choose A/B/Swipe/Area without re-execution
-        combined = torch.cat([a, b], dim=2)
+        combined = torch.cat([a, b], dim=2).clamp(0.0, 1.0).contiguous()
         return (combined, sel)
 
 
