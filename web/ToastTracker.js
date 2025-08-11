@@ -3,6 +3,7 @@ import { SFToast } from "./utils.js";
 export class ToastTracker {
   constructor() {
     this.toastCounts = new Map();
+    this.maxShows = new Map();
   }
 
   /**
@@ -10,13 +11,20 @@ export class ToastTracker {
    * @param {string} key - Unique key to track this toast type
    * @param {string} type - Toast type (info, warning, error, etc.)
    * @param {string} message - Toast message
-   * @param {number} maxShows - Maximum number of times to show this toast
+   * @param {number} maxShows - Maximum number of times to show this toast (overrides stored max if provided)
    * @returns {boolean} True if toast was shown, false if max limit reached
    */
-  showToast(key, type, message, maxShows = 2) {
+  showToast(key, type, message, maxShows = null) {
+    // If maxShows is provided, update the stored max for this key
+    if (maxShows !== null) {
+      this.maxShows.set(key, maxShows);
+    }
+    
+    // Get the stored max for this key, default to 2 if not set
+    const storedMax = this.maxShows.get(key) || 2;
     const currentCount = this.toastCounts.get(key) || 0;
     
-    if (currentCount >= maxShows) {
+    if (currentCount >= storedMax) {
       return false;
     }
 
@@ -34,10 +42,27 @@ export class ToastTracker {
   }
 
   /**
+   * Reset the count and max for a specific key
+   * @param {string} key - Key to reset
+   */
+  resetKeyAndMax(key) {
+    this.toastCounts.delete(key);
+    this.maxShows.delete(key);
+  }
+
+  /**
    * Reset all toast counts
    */
   resetAll() {
     this.toastCounts.clear();
+  }
+
+  /**
+   * Reset all toast counts and max values
+   */
+  resetAllAndMax() {
+    this.toastCounts.clear();
+    this.maxShows.clear();
   }
 
   /**
@@ -50,12 +75,30 @@ export class ToastTracker {
   }
 
   /**
+   * Get the stored max for a key
+   * @param {string} key - Key to check
+   * @returns {number} Stored max value or 2 if not set
+   */
+  getMax(key) {
+    return this.maxShows.get(key) || 2;
+  }
+
+  /**
+   * Set the max for a key
+   * @param {string} key - Key to set max for
+   * @param {number} maxShows - Maximum number of shows
+   */
+  setMax(key, maxShows) {
+    this.maxShows.set(key, maxShows);
+  }
+
+  /**
    * Check if a key has reached its maximum
    * @param {string} key - Key to check
-   * @param {number} maxShows - Maximum number of shows
    * @returns {boolean} True if max reached, false otherwise
    */
-  hasReachedMax(key, maxShows = 2) {
-    return this.getCount(key) >= maxShows;
+  hasReachedMax(key) {
+    const storedMax = this.getMax(key);
+    return this.getCount(key) >= storedMax;
   }
 }
