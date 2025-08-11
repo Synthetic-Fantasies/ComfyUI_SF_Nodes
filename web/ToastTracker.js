@@ -17,14 +17,8 @@ export class ToastTracker {
    * @returns {boolean} True if toast was shown, false if max limit reached
    */
   showToast(key, type, message, maxShows = null) {
-    // If maxShows is provided, update the stored max for this key
-    if (maxShows !== null) {
-      this.maxShows.set(key, maxShows);
-    }
-    
-    // Get the stored max for this key, default to DEFAULT_MAX_SHOWS if not set
-    const storedMax = this.maxShows.get(key) || ToastTracker.DEFAULT_MAX_SHOWS;
-    const currentCount = this.toastCounts.get(key) || 0;
+    // Get current count and max, setting max if provided
+    const [currentCount, storedMax] = this.getCountAndMax(key, maxShows);
     
     if (currentCount >= storedMax) {
       return false;
@@ -74,6 +68,25 @@ export class ToastTracker {
    */
   getCount(key) {
     return this.toastCounts.get(key) || 0;
+  }
+
+  /**
+   * Get current count and max for a key, setting max if provided
+   * @param {string} key - Key to check
+   * @param {number|null} maxShows - Max to set if provided
+   * @returns {[number, number]} Tuple of [currentCount, storedMax]
+   */
+  getCountAndMax(key, maxShows = null) {
+    // If maxShows is provided, update the stored max for this key
+    if (maxShows !== null) {
+      this.maxShows.set(key, maxShows);
+    }
+    
+    // Get the stored max for this key, default to DEFAULT_MAX_SHOWS if not set
+    const storedMax = this.maxShows.get(key) || ToastTracker.DEFAULT_MAX_SHOWS;
+    const currentCount = this.toastCounts.get(key) || 0;
+    
+    return [currentCount, storedMax];
   }
 
   /**
