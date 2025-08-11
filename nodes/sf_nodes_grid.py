@@ -134,6 +134,7 @@ class SFImageGridAuto:
                 "images": ("IMAGE", {}),
             },
             "optional": {
+                "favor_portrait": ("BOOLEAN", {"default": True}),
                 "filename_prefix": ("STRING", {"default": "SFGrid"}),
                 "save_result": ("BOOLEAN", {"default": False}),
             },
@@ -144,7 +145,7 @@ class SFImageGridAuto:
     FUNCTION = "make_grid"
     CATEGORY = "SF/Image"
 
-    def make_grid(self, images, filename_prefix: str = "SFGrid", save_result: bool = False):
+    def make_grid(self, images, favor_portrait: bool = True, filename_prefix: str = "SFGrid", save_result: bool = False):
         _ensure_torch()
         img_list = _to_list_of_images(images)
         if not img_list:
@@ -153,7 +154,8 @@ class SFImageGridAuto:
         img_list = [_ensure_rgb(im) for im in img_list]
         # Determine layout using original image sizes; do not resize tiles
         sizes: List[Tuple[int, int]] = [(int(t.shape[2]), int(t.shape[1])) for t in img_list]  # (w, h) from NHWC
-        total_w, total_h, cols, row_heights = _choose_layout_by_sizes(sizes)
+        target_ratio = 1.5 if favor_portrait else (1.0 / 1.5)
+        total_w, total_h, cols, row_heights = _choose_layout_by_sizes(sizes, target_ratio=target_ratio)
 
         # Prepare tiles as PIL for pasting
         if Image is not None:
