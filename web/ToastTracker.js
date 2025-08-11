@@ -1,6 +1,8 @@
 import { SFToast } from "./utils.js";
 
 export class ToastTracker {
+  static DEFAULT_MAX_SHOWS = 2;
+
   constructor() {
     this.toastCounts = new Map();
     this.maxShows = new Map();
@@ -20,8 +22,8 @@ export class ToastTracker {
       this.maxShows.set(key, maxShows);
     }
     
-    // Get the stored max for this key, default to 2 if not set
-    const storedMax = this.maxShows.get(key) || 2;
+    // Get the stored max for this key, default to DEFAULT_MAX_SHOWS if not set
+    const storedMax = this.maxShows.get(key) || ToastTracker.DEFAULT_MAX_SHOWS;
     const currentCount = this.toastCounts.get(key) || 0;
     
     if (currentCount >= storedMax) {
@@ -29,7 +31,7 @@ export class ToastTracker {
     }
 
     SFToast(type, message);
-    this.toastCounts.set(key, currentCount + 1);
+    this.incrementCount(key);
     return true;
   }
 
@@ -75,12 +77,21 @@ export class ToastTracker {
   }
 
   /**
+   * Increment the count for a key
+   * @param {string} key - Key to increment
+   */
+  incrementCount(key) {
+    const currentCount = this.toastCounts.get(key) || 0;
+    this.toastCounts.set(key, currentCount + 1);
+  }
+
+  /**
    * Get the stored max for a key
    * @param {string} key - Key to check
-   * @returns {number} Stored max value or 2 if not set
+   * @returns {number} Stored max value or DEFAULT_MAX_SHOWS if not set
    */
   getMax(key) {
-    return this.maxShows.get(key) || 2;
+    return this.maxShows.get(key) || ToastTracker.DEFAULT_MAX_SHOWS;
   }
 
   /**
