@@ -135,7 +135,6 @@ class SFImageGridAuto:
             },
             "optional": {
                 "favor_portrait": ("BOOLEAN", {"default": True}),
-                "pad_to_multiple": ("INT", {"default": 8, "min": 1, "max": 128}),
                 "filename_prefix": ("STRING", {"default": "SFGrid"}),
                 "save_result": ("BOOLEAN", {"default": False}),
             },
@@ -148,7 +147,6 @@ class SFImageGridAuto:
             "type": "node",
             "props": [
                 {"name": "favor_portrait", "label": "Favor Portrait", "type": "boolean", "default": True},
-                {"name": "pad_to_multiple", "label": "Pad Multiple", "type": "int", "default": 8, "min": 1, "max": 128},
                 {"name": "filename_prefix", "label": "Filename Prefix", "type": "text", "default": "SFGrid"},
                 {"name": "save_result", "label": "Save Result", "type": "boolean", "default": False},
             ],
@@ -159,7 +157,7 @@ class SFImageGridAuto:
     FUNCTION = "make_grid"
     CATEGORY = "SF/Image"
 
-    def make_grid(self, images, favor_portrait: bool = True, pad_to_multiple: int = 8, filename_prefix: str = "SFGrid", save_result: bool = False):
+    def make_grid(self, images, favor_portrait: bool = True, filename_prefix: str = "SFGrid", save_result: bool = False):
         _ensure_torch()
         img_list = _to_list_of_images(images)
         if not img_list:
@@ -205,9 +203,9 @@ class SFImageGridAuto:
                     idx += 1
                 y_cursor += row_h
             canvas = canvas.clamp(0.0, 1.0).contiguous()
-        # Optionally pad to nearest multiple (height/width) for downstream node compatibility
-        if isinstance(pad_to_multiple, int) and pad_to_multiple > 1:
-            mul = pad_to_multiple
+        # Optionally pad to nearest multiple (height/width) for downstream node compatibility (internal default)
+        mul = 8
+        if mul > 1:
             h, w = int(canvas.shape[1]), int(canvas.shape[2])
             pad_h = (mul - (h % mul)) % mul
             pad_w = (mul - (w % mul)) % mul
