@@ -1,5 +1,5 @@
 import { app } from "/scripts/app.js";
-import { Shapes, SFToast, SFConsoleLog } from "./utils.js";
+import { Shapes, SFToast, SFConsoleLog } from "./Utils.js";
 import { BaseSmartWidget, BaseSmartWidgetManager,} from "./widgets/BaseSmartWidget.js";
 import { SmartButton } from "./widgets/SmartButton.js";
 
