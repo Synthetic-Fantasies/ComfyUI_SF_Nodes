@@ -1,5 +1,5 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
-import { allow_debug } from "../js_shared.js";
+import { SFConsoleLog } from "../Ustils.js";
 
 export class SmartLayer extends BaseSmartWidget {
   constructor(x, y, width, height, node, options = {}) {
@@ -130,7 +130,7 @@ export class SmartLayer extends BaseSmartWidget {
     } else if (this.isMouseInRotatedArea()) {
       this.handleRotateStart();
     } else if (this.isMouseIn(-20) && this.isSelected && !this.isUnderCover) {
-      if(allow_debug) console.log('layer picked',);
+      SFConsoleLog('layer picked');
       this.isPicked = true;
       this.pickOffset = {
         x: this.mousePos.x - this.myX,

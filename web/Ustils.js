@@ -151,9 +151,10 @@ export const Severity = Object.freeze({
 export const allow_debug = true;
 
 
-export function SFConsoleLog(message) {
-  if (allow_debug) console.log(`${message}`);
+export function SFConsoleLog(...args) {
+  if (allow_debug) console.log(...args);
 }
+export const SFConsolelog = SFConsoleLog;
 
 
 export function toast(severity, summary, detail, life = 2000) {
@@ -326,7 +327,7 @@ export function hexDataToImage(hexData) {
 export async function getColorUnderMouseScreen(event) {
   // Create a hidden canvas
   const canvas = globalThis.LGraphCanvas.active_canvas.canvas;
-  console.log("globalThis", globalThis);
+  SFConsoleLog("globalThis", globalThis);
   const context = canvas.getContext("2d");
 
   // Get mouse position relative to the canvas
@@ -355,7 +356,7 @@ export function fakeMouseDown(canvas, node) {
     clientY: y, // Y coordinate of the mouse
   });
 
-  console.log("x,y", x, y);
+  SFConsoleLog("x,y", x, y);
   // Dispatch the event on the specified element
   canvas.dispatchEvent(mouseDownEvent);
 }

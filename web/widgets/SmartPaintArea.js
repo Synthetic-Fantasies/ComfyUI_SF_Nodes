@@ -3,6 +3,7 @@ import { app } from "../../../../scripts/app.js";
 import { api } from "../../../../scripts/api.js";
 import { allow_debug } from "../js_shared.js";
 import {  drawAngledStrips } from "../utils.js";
+import { SFConsoleLog } from "../Ustils.js";
 
 
 export class SmartPaintArea extends BaseSmartWidget {
@@ -354,7 +355,7 @@ export class SmartPaintArea extends BaseSmartWidget {
   
       // Check if the current data is the same as the last saved data
       if (this.lastForegroundData === foregroundDataURL && this.lastBackgroundData === backgroundDataURL) {
-        if (allow_debug) console.log("No changes detected; skipping save.");
+        SFConsoleLog("No changes detected; skipping save.");
         return; // Exit early if no changes
       }
   
@@ -377,7 +378,7 @@ export class SmartPaintArea extends BaseSmartWidget {
           method: "POST",
           body: formData,
         });
-        if (allow_debug) console.log("Drawing sent successfully.");
+        SFConsoleLog("Drawing sent successfully.");
       } catch (error) {
         console.error("Error sending the drawing:", error);
       }
@@ -451,15 +452,13 @@ export class SmartPaintArea extends BaseSmartWidget {
           bgImg.src = `data:image/png;base64,${hexToBase64(background)}`;
           bgImg.onload = () => {
             this.backgroundCtx.clearRect(0, 0, this.width, this.height);
-            if (allow_debug) {
-              console.log("Old Image Loaded");
-            }
+            SFConsoleLog("Old Image Loaded");
             // Center the background image
             const bgX = (this.width - bgImg.width) / 2;
             const bgY = (this.height - bgImg.height) / 2;
             this.backgroundCtx.drawImage(bgImg, bgX, bgY);
           };
-          if (allow_debug) console.log("Drawing received successfully.");
+          SFConsoleLog("Drawing received successfully.");
         } else {
           console.error("Error:", result.message);
         }
@@ -472,7 +471,7 @@ export class SmartPaintArea extends BaseSmartWidget {
     checkImagesLoaded() {
       if (this.isForegroundLoaded && this.isBackgroundLoaded) {
         this.lastImageLoaded = true; // Mark as fully loaded
-        if (allow_debug) console.log("All images loaded successfully.");
+        SFConsoleLog("All images loaded successfully.");
       }
     }
   
@@ -500,8 +499,8 @@ export class SmartPaintArea extends BaseSmartWidget {
           method: "POST",
           body: formData,
         });
-        //if (allow_debug) console.log(response.json());
-        if (allow_debug) console.log("Drawing sent successfully.");
+        //SFConsoleLog(response.json());
+        SFConsoleLog("Drawing sent successfully.");
       } catch (error) {
         console.error("Error sending the drawing:", error);
       }
@@ -518,7 +517,7 @@ export class SmartPaintArea extends BaseSmartWidget {
           body: formData,
         });
   
-        // if (allow_debug) console.log("response", response);
+        // SFConsoleLog("response", response);
   
         // Ensure the response is properly parsed as JSON
         const result = await response.json();

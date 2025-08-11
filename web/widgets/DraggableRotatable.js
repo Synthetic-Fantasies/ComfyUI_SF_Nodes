@@ -1,5 +1,5 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
-import { allow_debug } from "../js_shared.js";
+import { SFConsoleLog } from "../Utils.js"; 
 
 export class BaseDraggableRotatableWidget extends BaseSmartWidget {
     constructor(node) {

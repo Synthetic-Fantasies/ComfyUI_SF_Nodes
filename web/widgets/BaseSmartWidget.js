@@ -1,5 +1,5 @@
-import { app } from "../../../scripts/app.js";
-import { allow_debug } from "../js_shared.js";
+import { app } from "/scripts/app.js";
+import { SFConsoleLog } from "../Ustils.js";
 
 export class BaseSmartWidget {
   constructor(node) {
@@ -56,7 +56,6 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
   constructor(node, nodeName) {
     super(node);
     this.nodeName = nodeName;
-    this.allowDebug = false;
     this.otherWidgets = []
     this.init();
     this.initEventListeners();
@@ -117,7 +116,7 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
         widget.handleDown?.(e);
       }
     });
-    if (this.allowDebug) console.log("MouseDown", this.mousePos);
+    SFConsoleLog("MouseDown", this.mousePos);
   }
 
   handleMouseMove(e) {
@@ -126,7 +125,7 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
         widget.handleMove?.(e);
       }
     });
-    if (this.allowDebug) console.log("MouseMoved");
+    SFConsoleLog("MouseMoved");
   }
 
   handleMouseClick(e) {
@@ -136,7 +135,7 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
       }
     });
     this.filterDeletedWIdgets();
-    if (this.allowDebug) console.log("MouseClicked");
+    SFConsoleLog("MouseClicked");
   }
 
   handleMouseDrag(e) {
@@ -145,7 +144,7 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
         widget.handleDrag?.(e);
       }
     });
-    if (this.allowDebug) console.log("MouseDrag");
+    SFConsoleLog("MouseDrag");
   }
 
   filterDeletedWIdgets() {

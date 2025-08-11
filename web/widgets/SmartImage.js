@@ -1,7 +1,7 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
 import { SmartLoading } from "./SmartLoading.js";
 import { api } from "../../../../scripts/api.js";
-import { allow_debug } from "../js_shared.js";
+import { SFConsoleLog } from "../Ustils.js";
 
 export class SmartImage extends BaseSmartWidget {
   constructor(x, y, width, height, node, options = {}) {
@@ -160,7 +160,7 @@ export class SmartImage extends BaseSmartWidget {
         this.img.onerror = () => {
           console.error("Failed to load image from API");
         };
-        if (allow_debug) console.log("Image received successfully.");
+    SFConsoleLog("Image received successfully.");
       } else {
         console.error("Error fetching image:", result.message);
       }
@@ -201,7 +201,7 @@ export class SmartImage extends BaseSmartWidget {
         this.img.onerror = () => {
           console.error("Failed to load Masked image from API");
         };
-        if (allow_debug) console.log("Masked image received successfully.");
+    SFConsoleLog("Masked image received successfully.");
         this.loader.markDelete = true;
         this.node.setDirtyCanvas(true, true);
       } else {
