@@ -57,6 +57,44 @@
     container.appendChild(right);
     container.appendChild(mode);
 
+    // Ensure an image widget exists and is wired to execution results
+    try {
+      const CW = (app?.ui && app.ui.comfyWidgets) || window.ComfyWidgets || window.app?.ui?.comfyWidgets;
+      if (CW && typeof CW.IMAGE === 'function') {
+        // Adds a non-serialized image preview widget bound to output name 'image'
+        CW.IMAGE(node, 'image', app);
+      } else if (!node.widgets?.some?.(w => w.type === 'image' || w.name === 'image')) {
+        // Fallback: minimal image widget (value set in onExecuted)
+        node.addWidget?.('image', 'image', null, null, { serialize: false });
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // Update image widget on execution
+    const prevOnExecuted = node.onExecuted;
+    node.onExecuted = async function(message) {
+      try {
+        const widget = this.widgets?.find?.(w => w.type === 'image' || w.name === 'image');
+        const first = message?.images?.[0];
+        if (widget && first && app?.api?.getImage) {
+          const blob = await app.api.getImage(first);
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => {
+            URL.revokeObjectURL(url);
+            widget.value = img;
+            this.img = img; // allow background draw fallbacks
+            this.setDirtyCanvas(true, true);
+          };
+          img.src = url;
+        }
+      } catch (e) {
+        // ignore
+      }
+      return prevOnExecuted?.apply(this, arguments);
+    };
+
     const onDrawForeground = node.onDrawForeground;
     node.onDrawForeground = function(ctx) {
       onDrawForeground?.call(this, ctx);
