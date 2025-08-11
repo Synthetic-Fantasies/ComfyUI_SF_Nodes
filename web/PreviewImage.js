@@ -1,7 +1,7 @@
 import { app } from "/scripts/app.js";
 import { BaseSmartWidget, BaseSmartWidgetManager } from "./widgets/BaseSmartWidget.js";
 import { SmartButton } from "./widgets/SmartButton.js";
-import { Shapes, SFToast } from "./utils.js";
+import { Shapes, SFToast } from "./Utils.js";
 import { ImageHistoryTracker } from "./ImageHistoryTracker.js";
 import { ToastTracker } from "./ToastTracker.js";
 
