@@ -16,7 +16,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 }
 
 
-import os as _os
-WEB_DIRECTORY = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "web"))
+WEB_DIRECTORY = "web"
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]

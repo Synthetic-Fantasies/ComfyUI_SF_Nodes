@@ -47,4 +47,8 @@ python -c "import sf_nodes_all as m; print('Loaded nodes:', list(m.NODE_CLASS_MA
    - Composes an image grid without resizing tiles; optional save with `filename_prefix` and `save_result` like SaveImage.
    - UI preview is embedded in the node via extension.
 
+### Frontend assets
+- `WEB_DIRECTORY` is set to `web`, so ComfyUI will load `web/*.js` automatically on startup.
+- If UI elements don't appear, restart ComfyUI and hard-refresh the browser (clear cache).
+
  

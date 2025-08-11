@@ -56,7 +56,7 @@
     };
   }
 
-  app.registerExtension?.({
+  (app.registerExtension || app?.ui?.registerExtension)?.({
     name: 'sf.grid.auto',
     async beforeRegisterNodeDef(nodeType, nodeData, appRef) {
       if (nodeData?.name !== NODE_TYPE) return;
