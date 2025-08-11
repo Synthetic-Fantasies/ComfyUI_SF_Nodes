@@ -26,7 +26,7 @@ ln -s "$(pwd)" ~/ComfyUI/custom_nodes/ComfyUI_SF_Nodes
 ### Develop locally
 ```bash
 source .venv/bin/activate
-python -c "import sf_hello_nodes as m; print('Loaded nodes:', list(m.NODE_CLASS_MAPPINGS.keys()))"
+python -c "import sf_nodes_all as m; print('Loaded nodes:', list(m.NODE_CLASS_MAPPINGS.keys()))"
 ```
 
 ### Included nodes
@@ -45,6 +45,4 @@ python -c "import sf_hello_nodes as m; print('Loaded nodes:', list(m.NODE_CLASS_
   - Modes: `A`, `B`, `SideBySide` (resizes to same height and concatenates).
   - UI adds ◀ ▶ buttons to change `index` quickly.
 
-- `SFTextConcat` (category: `SF/Text`): simple text concatenation.
-- `SFMathOps` (category: `SF/Math`): add/sub/mul/div of floats.
-- `SFImagePassthrough`, `SFImageGrayscale` (category: `SF/Image`): basic image ops.
+ 

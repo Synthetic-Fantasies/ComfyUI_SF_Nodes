@@ -106,9 +106,7 @@ class SFWildcardsPromptMatrixExt:
                 # Seed must be a single supported type; derive an int from seed and iteration
                 rng.seed((seed * 1_000_003 + i) & 0xFFFFFFFF)
 
-            # Replace occurrences left-to-right; choose a line index each time
-            # Track indices per occurrence independently (tokens may repeat)
-            # ((start,end), replacement_value, file_line_tag, label_text)
+            # Replace occurrences from left-to-right; choose a line index each time
             replacements: List[Tuple[Tuple[int, int], str, str, str]] = []
             for m in tokens_in_order:
                 tok = m.group(1)
@@ -156,3 +154,5 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "SFWildcardsPromptMatrixExt": "SF Wildcards Prompt Matrix+",
 }
+
+

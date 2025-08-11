@@ -1,3 +1,4 @@
+import os
 try:
     import torch  # Provided by ComfyUI runtime
     import torch.nn.functional as F
@@ -106,5 +107,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "SFPreviewCompare": "SF Preview Compare (A/B)",
 }
 
-# Serve frontend assets
-WEB_DIRECTORY = "web"
+# Serve frontend assets; resolve to repo root's web directory
+WEB_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "web"))
+
+
