@@ -59,7 +59,7 @@ def _read_wildcard_file(base_dir: str, token: str) -> Tuple[str, List[Tuple[str,
     return os.path.basename(filename), lines
 
 
-class SFWildcardsPromptMatrixExt:
+class SFWildcardsPromptMatrix:
     @classmethod
     def INPUT_TYPES(cls):
         return {

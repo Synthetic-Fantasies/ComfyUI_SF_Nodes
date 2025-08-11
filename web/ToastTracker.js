@@ -18,7 +18,7 @@ export class ToastTracker {
    */
   showToast(key, type, message, maxShows = null) {
     // Get current count and max, setting max if provided
-    const [currentCount, storedMax] = this.getCountAndMax(key, maxShows);
+    let currentCount, storedMax = this.getCountAndMax(key, maxShows);
     
     if (currentCount >= storedMax) {
       return false;
@@ -81,12 +81,19 @@ export class ToastTracker {
     if (maxShows !== null) {
       this.maxShows.set(key, maxShows);
     }
-    
-    // Get the stored max for this key, default to DEFAULT_MAX_SHOWS if not set
-    const storedMax = this.maxShows.get(key) || ToastTracker.DEFAULT_MAX_SHOWS;
-    const currentCount = this.toastCounts.get(key) || 0;
-    
-    return [currentCount, storedMax];
+    else{
+      maxShows =  this.maxShows.get(key)
+      if (maxShows === undefined) {
+        maxShows = ToastTracker.DEFAULT_MAX_SHOWS;
+        this.maxShows.set(key, maxShows);
+      }
+    }
+    let currentCount = this.toastCounts.get(key);
+    if (currentCount === undefined) {
+      currentCount = 0;
+      this.toastCounts.set(key, currentCount);
+    }
+    return (currentCount, maxShows);
   }
 
   /**
