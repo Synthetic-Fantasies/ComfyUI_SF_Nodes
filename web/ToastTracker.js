@@ -1,4 +1,4 @@
-import { SFToast } from "./utils.js";
+import { SFToast } from "./Utils.js";
 
 export class ToastTracker {
   static DEFAULT_MAX_SHOWS = 2;

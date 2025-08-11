@@ -1,4 +1,4 @@
-import { SFConsoleLog } from "./utils.js";
+import { SFConsoleLog } from "./Utils.js";
 
 export class ImageHistoryTracker {
   constructor(maxImages = 16) {
