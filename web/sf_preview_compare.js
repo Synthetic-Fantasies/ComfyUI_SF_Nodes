@@ -1,5 +1,5 @@
 // Frontend UI for SFPreviewCompare
-// Adds left/right buttons to adjust the 'index' input parameter.
+// Adds left/right buttons to adjust 'index' and a mode switcher (A/B/Swipe/Area) at display time.
 
 (function () {
   const NODE_TYPE = 'SFPreviewCompare';
@@ -8,8 +8,8 @@
     if (node._sf_buttons_added) return;
     node._sf_buttons_added = true;
 
-    const btnLeft = new LiteGraph.LGraphNode.makeButton?.('◀') || document.createElement('button');
-    const btnRight = new LiteGraph.LGraphNode.makeButton?.('▶') || document.createElement('button');
+    const MODES = ['A', 'B', 'Swipe', 'Area'];
+    node._sf_mode = node._sf_mode || 'Swipe';
 
     function setIndex(delta) {
       const idxSlot = node.inputs?.findIndex(i => i && i.name === 'index');
@@ -40,8 +40,22 @@
     right.textContent = '▶';
     right.onclick = () => setIndex(+1);
 
+    const mode = document.createElement('select');
+    for (const m of MODES) {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      if (m === node._sf_mode) opt.selected = true;
+      mode.appendChild(opt);
+    }
+    mode.onchange = () => {
+      node._sf_mode = mode.value;
+      node.setDirtyCanvas(true, true);
+    };
+
     container.appendChild(left);
     container.appendChild(right);
+    container.appendChild(mode);
 
     const onDrawForeground = node.onDrawForeground;
     node.onDrawForeground = function(ctx) {
@@ -75,6 +89,46 @@
       nodeType.prototype.onNodeCreated = function() {
         onNodeCreated?.apply(this, arguments);
         addButtons(this, appRef);
+      };
+      // Override onDrawBackground to visualize chosen mode using the combined output
+      const onDrawBackground = nodeType.prototype.onDrawBackground;
+      nodeType.prototype.onDrawBackground = function(ctx) {
+        onDrawBackground?.apply(this, arguments);
+        try {
+          const imgWidget = this.widgets?.find?.(w => w.type === 'image' || w.name === 'image');
+          const tex = this.bgImage || this.img || imgWidget?.value;
+          if (!tex) return;
+          const mode = this._sf_mode || 'Swipe';
+          const w = this.size[0] - 10;
+          const h = this.size[1] - 40;
+          const x = 5, y = 5;
+          if (mode === 'A' || mode === 'B') {
+            // Assume combined is [A|B]; crop left or right half
+            const sx = (mode === 'A') ? 0 : tex.width / 2;
+            const sw = tex.width / 2;
+            ctx.drawImage(tex, sx, 0, sw, tex.height, x, y, w, h);
+          } else if (mode === 'Swipe') {
+            const swipeX = Math.floor((Date.now() / 20) % w);
+            const sw = tex.width / 2;
+            // left area from A
+            ctx.drawImage(tex, 0, 0, sw, tex.height, x, y, swipeX, h);
+            // right area from B
+            const remain = w - swipeX;
+            if (remain > 0)
+              ctx.drawImage(tex, sw, 0, sw, tex.height, x + swipeX, y, remain, h);
+          } else if (mode === 'Area') {
+            const sw = tex.width / 2;
+            // draw A as base
+            ctx.drawImage(tex, 0, 0, sw, tex.height, x, y, w, h);
+            // overlay B with transparency
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.drawImage(tex, sw, 0, sw, tex.height, x, y, w, h);
+            ctx.restore();
+          }
+        } catch (e) {
+          // ignore draw errors
+        }
       };
     }
   });

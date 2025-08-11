@@ -60,7 +60,6 @@ class SFPreviewCompare:
                 "image_a": ("IMAGE", {}),
                 "image_b": ("IMAGE", {}),
                 "index": ("INT", {"default": 0, "min": 0, "max": 10_000}),
-                "mode": (["A", "B", "SideBySide"], {"default": "SideBySide"}),
             }
         }
 
@@ -69,7 +68,7 @@ class SFPreviewCompare:
     FUNCTION = "render"
     CATEGORY = "SF/Preview"
 
-    def render(self, image_a, image_b, index: int, mode: str):
+    def render(self, image_a, image_b, index: int):
         _ensure_torch()
         a_list = _normalize_images(image_a)
         b_list = _normalize_images(image_b)
@@ -81,11 +80,6 @@ class SFPreviewCompare:
         a = _pick_first_batch(a)
         b = _pick_first_batch(b)
 
-        if mode == "A":
-            return (a, sel)
-        if mode == "B":
-            return (b, sel)
-
         a, b = _resize_to_same_height(a, b)
         # If channel counts differ (e.g., 1 vs 3), expand to 3
         def ensure_3c(t):
@@ -95,6 +89,7 @@ class SFPreviewCompare:
             return t
         a = ensure_3c(a)
         b = ensure_3c(b)
+        # Always output side-by-side combined image so UI can choose A/B/Swipe/Area without re-execution
         combined = torch.cat([a, b], dim=2)
         return (combined, sel)
 
