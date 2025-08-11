@@ -94,7 +94,21 @@ class SFPreviewCompare:
         b = to_rgb_float_nhwc_cpu(b)
         # Always output side-by-side combined image so UI can choose A/B/Swipe/Area without re-execution
         combined = torch.cat([a, b], dim=2).clamp(0.0, 1.0).contiguous()
-        return (combined, sel)
+        # Also emit UI metadata to ensure ComfyUI shows a preview even without custom JS
+        ui_meta = {}
+        try:
+            import os, time
+            from PIL import Image as _Image  # type: ignore
+            import folder_paths  # type: ignore
+            temp_dir = folder_paths.get_temp_directory()
+            os.makedirs(temp_dir, exist_ok=True)
+            name = f"sfprev_{int(time.time()*1000)}.png"
+            arr = (combined[0].detach().cpu().numpy() * 255).astype("uint8")
+            _Image.fromarray(arr, mode="RGB").save(os.path.join(temp_dir, name))
+            ui_meta = {"ui": {"images": [{"filename": name, "subfolder": "", "type": "temp"}]}}
+        except Exception:
+            pass
+        return (combined, sel), ui_meta
 
 
 NODE_CLASS_MAPPINGS = {

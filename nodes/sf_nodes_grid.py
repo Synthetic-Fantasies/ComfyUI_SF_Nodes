@@ -191,7 +191,25 @@ class SFImageGridAuto:
                     idx += 1
                 y_cursor += row_h
             canvas = canvas.clamp(0.0, 1.0).contiguous()
-        # Optionally save to disk using ComfyUI's folder_paths conventions
+        # Create UI preview in temp and optionally save to disk using ComfyUI's folder_paths conventions
+        ui_images = []
+        try:
+            import os, time
+            import folder_paths  # type: ignore
+            temp_dir = folder_paths.get_temp_directory()
+            os.makedirs(temp_dir, exist_ok=True)
+            preview_name = f"sfgrid_{int(time.time()*1000)}.png"
+            if Image is not None and 'grid_pil' in locals():
+                grid_pil.save(os.path.join(temp_dir, preview_name))
+            else:
+                from PIL import Image as _Image
+                arr = (canvas[0].detach().cpu().clamp(0, 1).numpy() * 255).astype("uint8")
+                _Image.fromarray(arr, mode="RGB").save(os.path.join(temp_dir, preview_name))
+            ui_images.append({"filename": preview_name, "subfolder": "", "type": "temp"})
+        except Exception:
+            pass
+
+        # Optionally save to output directory
         if save_result:
             try:
                 import os
@@ -226,6 +244,8 @@ class SFImageGridAuto:
             except Exception:
                 # Best-effort save; ignore failures at UI/runtime
                 pass
+        if ui_images:
+            return (canvas,), {"ui": {"images": ui_images}}
         return (canvas,)
 
 NODE_CLASS_MAPPINGS = {
