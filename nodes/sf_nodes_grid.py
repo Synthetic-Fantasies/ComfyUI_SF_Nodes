@@ -35,24 +35,15 @@ def _ensure_rgb(image):
     raise ValueError("Unsupported channel count")
 
 
-def _resize_letterbox_to_square(img_nhwc, size: int):
+def _resize_preserve_height(img_nhwc, out_h: int):
     _ensure_torch()
     # Convert to NCHW for interpolate
-    n, h, w, c = img_nhwc.shape
+    _, h, w, _ = img_nhwc.shape
+    aspect = float(w) / float(h)
+    out_w = max(1, int(round(out_h * aspect)))
     img = img_nhwc.permute(0, 3, 1, 2)
-    # Compute scale to fit into size while preserving aspect
-    scale = min(size / max(1, h), size / max(1, w))
-    new_h = max(1, int(round(h * scale)))
-    new_w = max(1, int(round(w * scale)))
-    img_r = F.interpolate(img, size=(new_h, new_w), mode='bilinear', align_corners=False)
-    # Pad to square
-    pad_top = (size - new_h) // 2
-    pad_bottom = size - new_h - pad_top
-    pad_left = (size - new_w) // 2
-    pad_right = size - new_w - pad_left
-    img_p = F.pad(img_r, (pad_left, pad_right, pad_top, pad_bottom))
-    # Back to NHWC
-    return img_p.permute(0, 2, 3, 1)
+    img_r = F.interpolate(img, size=(out_h, out_w), mode='bilinear', align_corners=False)
+    return img_r.permute(0, 2, 3, 1)
 
 
 def _choose_portrait_grid(num: int, target_ratio: float = 1.5) -> Tuple[int, int]:
@@ -94,19 +85,41 @@ class SFImageGridAuto:
             raise ValueError("No images provided")
         # Normalize to RGB
         img_list = [_ensure_rgb(im) for im in img_list]
-        # Determine grid
+        # Determine grid arrangement (portrait target), then scale tiles preserving aspect
         n = len(img_list)
         rows, cols = _choose_portrait_grid(n)
-        # Create tiles
-        cell = 256
-        tiles = [_resize_letterbox_to_square(im, cell) for im in img_list]
-        # Compose canvas (NHWC)
-        canvas = torch.zeros((1, rows * cell, cols * cell, 3), dtype=tiles[0].dtype, device=tiles[0].device)
+        row_height = 256
+        # Resize each image to common row height, preserve aspect
+        tiles = [_resize_preserve_height(im, row_height) for im in img_list]
+        # Compute per-row widths and overall canvas size
+        row_widths: List[int] = []
+        for r in range(rows):
+            start = r * cols
+            end = min(start + cols, n)
+            if start >= n:
+                row_widths.append(0)
+                continue
+            width_sum = sum(int(t.shape[2]) for t in tiles[start:end])
+            row_widths.append(width_sum)
+        canvas_w = max(row_widths) if row_widths else 0
+        canvas_h = rows * row_height
+        if canvas_w <= 0 or canvas_h <= 0:
+            raise ValueError("Computed invalid canvas size")
+        # Compose canvas (NHWC), no letterboxing inside tiles; right side of shorter rows remains empty
+        canvas = torch.zeros((1, canvas_h, canvas_w, 3), dtype=tiles[0].dtype, device=tiles[0].device)
         for i, tile in enumerate(tiles):
             r = i // cols
-            c = i % cols
-            y0, y1 = r * cell, (r + 1) * cell
-            x0, x1 = c * cell, (c + 1) * cell
+            # Place sequentially across the row
+            y0 = r * row_height
+            y1 = y0 + row_height
+            # current x is sum of previous widths in this row
+            start = r * cols
+            idx_in_row = i - start
+            x_offset = 0
+            for k in range(idx_in_row):
+                x_offset += int(tiles[start + k].shape[2])
+            x0 = x_offset
+            x1 = x0 + int(tile.shape[2])
             canvas[:, y0:y1, x0:x1, :] = tile
         return (canvas,)
 
