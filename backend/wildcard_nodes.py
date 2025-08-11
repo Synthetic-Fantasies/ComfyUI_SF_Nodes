@@ -147,12 +147,3 @@ class SFWildcardsPromptMatrix:
         return (out_prompts, out_meta, out_tags, out_tags_list, wildcards_dir)
 
 
-NODE_CLASS_MAPPINGS = {
-    "SFWildcardsPromptMatrixExt": SFWildcardsPromptMatrixExt,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "SFWildcardsPromptMatrixExt": "SF Wildcards Prompt Matrix+",
-}
-
-

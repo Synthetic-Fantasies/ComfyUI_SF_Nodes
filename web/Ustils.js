@@ -139,11 +139,6 @@ export const commonColors = [
   //"#808080", // Gray
 ];
 
-export function log(...args) {
-  if (allow_debug) {
-    console.log(...args); // Spread args to log them properly
-  }
-}
 
 export const Severity = Object.freeze({
   WARN: "warn",
@@ -153,7 +148,7 @@ export const Severity = Object.freeze({
   SUCCESS: "success",
 });
 
-export const allow_debug = false;
+export const allow_debug = true;
 
 
 export function SFConsoleLog(message) {
@@ -172,6 +167,7 @@ export function toast(severity, summary, detail, life = 2000) {
 
 export function SFToast(severity, detail) {
   toast(severity, "SF!", detail);
+}
 
 export function lightenColor(color, percent) {
   const ctx = document.createElement("canvas").getContext("2d");
