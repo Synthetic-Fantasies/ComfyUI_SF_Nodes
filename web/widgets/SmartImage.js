@@ -1,7 +1,7 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
 import { SmartLoading } from "./SmartLoading.js";
-import { api } from "../../../../scripts/api.js";
-import { SFConsoleLog } from "../Ustils.js";
+import { api } from "/scripts/api.js";
+import { SFConsoleLog } from "../Utils.js";
 
 export class SmartImage extends BaseSmartWidget {
   constructor(x, y, width, height, node, options = {}) {
@@ -675,9 +675,7 @@ export class SmartImage extends BaseSmartWidget {
       return;
     }
     const aspectRatio = this.img.width / this.img.height;
-    // if (allow_debug) {
-    //   console.log("scale", scale);
-    // }
+
     let maxWidth = Math.min(pa[0] / scale, 512);
     let maxHeight = Math.min(pa[1] / scale, 512);
 
@@ -711,9 +709,7 @@ export class SmartImage extends BaseSmartWidget {
       console.error("Invalid canvas context provided.");
       return;
     }
-    // if (allow_debug) {
-    //   console.log("scale", scale);
-    // }
+
     if (scale === -1 || scale === 0) scale = 1;
     else if (scale === 1) scale = 2;
     else if (scale === 2) scale = 4;

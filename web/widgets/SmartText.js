@@ -1,5 +1,5 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
-import { allow_debug } from "../js_shared.js";
+
 
 export class SmartText extends BaseSmartWidget {
   constructor(x, y, node, options = {}) {
@@ -458,9 +458,7 @@ export class SmartText extends BaseSmartWidget {
       return;
     }
     const aspectRatio = this.img.width / this.img.height;
-    // if (allow_debug) {
-    //   console.log("scale", scale);
-    // }
+
     let maxWidth = Math.min(pa[0] / scale, 512);
     let maxHeight = Math.min(pa[1] / scale, 512);
 
@@ -494,9 +492,7 @@ export class SmartText extends BaseSmartWidget {
       console.error("Invalid canvas context provided.");
       return;
     }
-    // if (allow_debug) {
-    //   console.log("scale", scale);
-    // }
+
     if (scale === -1 || scale === 0) scale = 1;
     else if (scale === 1) scale = 2;
     else if (scale === 2) scale = 4;
@@ -506,7 +502,7 @@ export class SmartText extends BaseSmartWidget {
     ctx.save();
 
     // Calculate the scaled dimensions and offsets
-    //if(allow_debug){console.log('SCALE is',scale);}
+ 
     const scaledWidth = width * scale;
     const scaledHeight = height * scale;
     const scaledX = (myX - xOffset) * scale;

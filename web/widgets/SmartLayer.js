@@ -1,5 +1,5 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
-import { SFConsoleLog } from "../Ustils.js";
+import { SFConsoleLog } from "../Utils.js";
 
 export class SmartLayer extends BaseSmartWidget {
   constructor(x, y, width, height, node, options = {}) {
@@ -436,9 +436,7 @@ export class SmartLayer extends BaseSmartWidget {
       return;
     }
     const aspectRatio = this.img.width / this.img.height;
-    // if (allow_debug) {
-    //   console.log("scale", scale);
-    // }
+
     let maxWidth = Math.min(pa[0] / scale, 512);
     let maxHeight = Math.min(pa[1] / scale, 512);
 

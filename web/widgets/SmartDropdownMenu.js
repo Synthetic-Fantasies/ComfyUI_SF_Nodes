@@ -1,6 +1,6 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
-import { lightenColor } from "../utils.js";
-import { allow_debug } from "../js_shared.js";
+import { lightenColor } from "../Utils.js";
+
 
 export class SmartDropdownMenu extends BaseSmartWidget {
     constructor(x, y, width, height, node, title, items) {

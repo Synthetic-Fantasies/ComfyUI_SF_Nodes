@@ -1,5 +1,5 @@
 import { app } from "/scripts/app.js";
-import { SFConsoleLog } from "../Ustils.js";
+import { SFConsoleLog } from "../Utils.js";
 
 export class BaseSmartWidget {
   constructor(node) {

@@ -1,5 +1,5 @@
 import { SmartWidget } from "./SmartWidget.js";
-import { allow_debug } from "../js_shared.js";
+
 
 export class SmartButton extends SmartWidget {
     constructor(x, y, width, height, node, text, options = {}) {

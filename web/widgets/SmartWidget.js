@@ -1,6 +1,5 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
 import { Shapes, lightenColor } from "../Utils.js";
-import { allow_debug } from "../js_shared.js";
 
 export class SmartWidget extends BaseSmartWidget {
   constructor(x, y, width, height, node, options = {}) {

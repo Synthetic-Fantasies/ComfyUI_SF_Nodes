@@ -1,5 +1,4 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
-import { allow_debug } from "../js_shared.js";
 
 export class SmartLoading extends BaseSmartWidget {
   constructor(x, y, node) {

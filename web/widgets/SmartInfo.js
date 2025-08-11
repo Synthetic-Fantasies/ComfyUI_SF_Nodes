@@ -1,6 +1,6 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
-import { Shapes } from "../utils.js";
-import { allow_debug } from "../js_shared.js";
+import { Shapes } from "../Utils.js";
+
 
 export class SmartInfo extends BaseSmartWidget {
   constructor(x, y, width, height, node, text, options = {}) {

@@ -1,9 +1,8 @@
 import { BaseSmartWidget } from "./BaseSmartWidget.js";
-import { app } from "../../../../scripts/app.js";
-import { api } from "../../../../scripts/api.js";
-import { allow_debug } from "../js_shared.js";
-import {  drawAngledStrips } from "../utils.js";
-import { SFConsoleLog } from "../Ustils.js";
+import { app } from "/scripts/app.js";
+import { api } from "/scripts/api.js";
+import {  drawAngledStrips,SFConsoleLog } from "../Utils.js";
+
 
 
 export class SmartPaintArea extends BaseSmartWidget {
@@ -275,10 +274,7 @@ export class SmartPaintArea extends BaseSmartWidget {
       }
   
       this.backgroundCtx.putImageData(backgroundData, 0, 0);
-      // if (allow_debug) {
-      //   console.log("scaleFactor", this.scaleFactor);
-      //   console.log("pa.width, pa.height", this.width, this.height);
-      // }
+
     }
   
     switchLayer() {
