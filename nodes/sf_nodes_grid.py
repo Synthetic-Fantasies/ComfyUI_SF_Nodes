@@ -4,6 +4,10 @@ try:
 except Exception:
     torch = None
     F = None
+try:
+    from PIL import Image  # type: ignore
+except Exception:
+    Image = None
 
 from typing import List, Tuple
 
@@ -44,6 +48,21 @@ def _resize_preserve_height(img_nhwc, out_h: int):
     img = img_nhwc.permute(0, 3, 1, 2)
     img_r = F.interpolate(img, size=(out_h, out_w), mode='bilinear', align_corners=False)
     return img_r.permute(0, 2, 3, 1)
+
+
+def _tensor_to_pil(img_nhwc):
+    # Convert 1xHxWxC tensor in [0,1] to PIL RGB
+    import numpy as np  # lazy import
+    arr = img_nhwc[0].detach().cpu().clamp(0, 1).numpy()
+    arr_u8 = (arr * 255.0 + 0.5).astype("uint8")
+    return Image.fromarray(arr_u8, mode="RGB")
+
+
+def _pil_to_tensor_nhwc_float(img_pil):
+    import numpy as np
+    arr = np.asarray(img_pil.convert("RGB"), dtype="float32") / 255.0
+    t = torch.from_numpy(arr).unsqueeze(0)  # NHWC
+    return t
 
 
 def _choose_portrait_grid(num: int, target_ratio: float = 1.5) -> Tuple[int, int]:
@@ -114,28 +133,43 @@ class SFImageGridAuto:
         canvas_h = rows * row_height
         if canvas_w <= 0 or canvas_h <= 0:
             raise ValueError("Computed invalid canvas size")
-        # Compose canvas (NHWC), no letterboxing inside tiles; right side of shorter rows remains empty
-        canvas = torch.zeros((1, canvas_h, canvas_w, 3), dtype=torch.float32, device="cpu")
-        for i, tile in enumerate(tiles):
-            r = i // cols
-            # Place sequentially across the row
-            y0 = r * row_height
-            y1 = y0 + row_height
-            # current x is sum of previous widths in this row
-            start = r * cols
-            idx_in_row = i - start
-            x_offset = 0
-            for k in range(idx_in_row):
-                x_offset += int(tiles[start + k].shape[2])
-            x0 = x_offset
-            x1 = x0 + int(tile.shape[2])
-            canvas[:, y0:y1, x0:x1, :] = tile
-        canvas = canvas.clamp(0.0, 1.0).contiguous()
+        # Compose grid using PIL when available (common pattern), fallback to tensor compose
+        if Image is not None:
+            grid_pil = Image.new("RGB", (int(canvas_w), int(canvas_h)))
+            for i, tile in enumerate(tiles):
+                r = i // cols
+                # X position is sum of previous widths in this row
+                start = r * cols
+                idx_in_row = i - start
+                x_offset = 0
+                for k in range(idx_in_row):
+                    x_offset += int(tiles[start + k].shape[2])
+                tile_pil = _tensor_to_pil(tile)
+                grid_pil.paste(tile_pil, (int(x_offset), int(r * row_height)))
+            # Convert back to tensor for pipeline
+            canvas = _pil_to_tensor_nhwc_float(grid_pil).to(dtype=torch.float32, device="cpu").contiguous()
+        else:
+            canvas = torch.zeros((1, canvas_h, canvas_w, 3), dtype=torch.float32, device="cpu")
+            for i, tile in enumerate(tiles):
+                r = i // cols
+                # Place sequentially across the row
+                y0 = r * row_height
+                # current x is sum of previous widths in this row
+                start = r * cols
+                idx_in_row = i - start
+                x_offset = 0
+                for k in range(idx_in_row):
+                    x_offset += int(tiles[start + k].shape[2])
+                x0 = x_offset
+                canvas[:, y0:y0 + row_height, x0:x0 + int(tile.shape[2]), :] = tile
+            canvas = canvas.clamp(0.0, 1.0).contiguous()
+            # Also derive a PIL image for saving if needed
+            if Image is not None:
+                grid_pil = _tensor_to_pil(canvas)
         # Optionally save to disk using ComfyUI's folder_paths conventions
         if save_result:
             try:
                 import os
-                from PIL import Image  # type: ignore
                 try:
                     import folder_paths  # type: ignore
                     output_dir = folder_paths.get_output_directory()
@@ -157,9 +191,13 @@ class SFImageGridAuto:
                     from time import time as _now
                     file_path = os.path.join("output", f"{(filename_prefix or 'SFGrid')}_{int(_now())}.png")
 
-                arr = (canvas[0].detach().cpu().clamp(0, 1).numpy() * 255).astype("uint8")
-                img = Image.fromarray(arr, mode="RGB")
-                img.save(file_path)
+                # Save via PIL grid if available, else from tensor
+                if Image is not None and 'grid_pil' in locals():
+                    grid_pil.save(file_path)
+                else:
+                    arr = (canvas[0].detach().cpu().clamp(0, 1).numpy() * 255).astype("uint8")
+                    from PIL import Image as _Image  # try lazy import
+                    _Image.fromarray(arr, mode="RGB").save(file_path)
             except Exception:
                 # Best-effort save; ignore failures at UI/runtime
                 pass
