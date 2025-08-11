@@ -2,6 +2,7 @@ import { app } from "/scripts/app.js";
 import { BaseSmartWidget, BaseSmartWidgetManager } from "./widgets/BaseSmartWidget.js";
 import { SmartButton } from "./widgets/SmartButton.js";
 import { Shapes, SFToast } from "./utils.js";
+import { ImageHistoryTracker } from "./ImageHistoryTracker.js";
 
 
 
@@ -28,8 +29,7 @@ app.registerExtension({
     let b = null;
     let c = null;
     let compare = false;
-    let imagesTracked = [];
-    const MAX_IMAGES = 16;
+    const imageTracker = new ImageHistoryTracker(16);
 
     let mouse = {
       mouseInNode: false,
@@ -44,63 +44,32 @@ app.registerExtension({
     const MAX_TOAST_SHOWS = 2;
 
     function pushToImgs(newImage) {
-      // Check if image is undefined or null
-      if (!newImage || !newImage.naturalWidth) {
-        SFConsoleLog("Undefined or null image, skipping");
-        return imagesTracked;
-      }
-
-      const imageExists = imagesTracked.some((img) => {
-        // Extract filename from URLs by removing the random parameter
-        const getFilename = (url) => {
-          if (!url) return "";
-          const match = url.match(/filename=([^&]+)/);
-          return match ? match[1] : "";
-        };
-
-        const newImageFilename = getFilename(newImage.src);
-        const existingImageFilename = getFilename(img.src);
-
-        return newImageFilename === existingImageFilename;
-      });
-
-      if (imageExists) {
-        SFConsoleLog("Image already exists, skipping");
-        return imagesTracked;
-      }
-
-      imagesTracked.push(newImage);
-      // If array exceeds MAX_IMAGES, remove oldest image(s)
-      if (imagesTracked.length > MAX_IMAGES) {
-        imagesTracked.shift(); // removes first (oldest) element
-      }
-      SFConsoleLog("imagesTracked list updated, length:", imagesTracked.length);
-      return imagesTracked;
+      return imageTracker.pushToImgs(newImage);
     }
 
     function cycleImgs() {
-      if (imagesTracked.length === 1) {
+      if (imageTracker.getImageCount() === 1) {
         SFToast("info", "Only this image exist in this node history");
         return;
       }
 
       // Switch to previous imagesTracked if available
-      if (node.imgs && imagesTracked.length > 1) {
-        node.imgs = imagesTracked; // Show previous image
+      if (node.imgs && imageTracker.getImageCount() > 1) {
+        node.imgs = imageTracker.getImages(); // Show previous image
       }
     }
 
     function togglingLastTwoImages() {
-      SFConsoleLog("imagesTracked", imagesTracked);
+      SFConsoleLog("imagesTracked", imageTracker.getImages());
       // Only cycle between last two imagesTracked
-      if (imagesTracked.length > 1) {
+      if (imageTracker.hasEnoughImagesForComparison()) {
         node.imageIndex = 0;
 
         // Get current image
         const currentImg = node.imgs[0];
 
         // Get last two imagesTracked from history
-        const lastTwo = imagesTracked.slice(-2);
+        const lastTwo = imageTracker.getLastTwoImages();
 
         // If current is last image, show second to last
         // If current is second to last, show last
@@ -156,14 +125,14 @@ app.registerExtension({
           compare = !compare;
           toggleButtonActivation(c, compare);
         }
-        if (!node.imgs) {
+        if (!imageTracker.hasAnyImages()) {
           if (toastShownCountH < MAX_TOAST_SHOWS) {
             SFToast("info", "No images in this node history");
             toastShownCountH++;
           }
           return;
         }
-        if (node.imgs.length > 1) {
+        if (imageTracker.hasEnoughImagesForComparison()) {
           togglingLastTwoImages();
         } else {
           cycleImgs();
@@ -205,14 +174,14 @@ app.registerExtension({
 
         // reset from history state
         if (node.imageIndex === null) {
-          if (imagesTracked.length > 1) {
+          if (imageTracker.hasEnoughImagesForComparison()) {
             node.imageIndex = 0; // reset to single view
             node.imgs = node.imgs = [node.imgs[node.imgs.length - 1]]; // show last image in node.imgs list;
           }
         }
 
         // start compare
-        if (imagesTracked.length <= 1) {
+        if (!imageTracker.hasEnoughImagesForComparison()) {
           if (toastShownCountI < MAX_TOAST_SHOWS) {
             SFToast("info", "You must execute this node at least twice");
             toastShownCountI++;
@@ -243,7 +212,7 @@ app.registerExtension({
       setTimeout(() => {
         // push last image
         const lastImage = node.imgs?.at(-1);
-        if (!imagesTracked.some((img) => img === lastImage)) {
+        if (!imageTracker.hasImage(lastImage)) {
           pushToImgs(lastImage);
         }
 
@@ -260,7 +229,7 @@ app.registerExtension({
             // Call the original draw function first
             originalDraw.apply(this, [ctx, node, widget_width, y, widget_height, ...args]);
             
-            drawImgOverlay(mouse, node, widget_width, y, ctx, imagesTracked, compare);
+            drawImgOverlay(mouse, node, widget_width, y, ctx, imageTracker.getImages(), compare);
           };
         }
       }, 300);
