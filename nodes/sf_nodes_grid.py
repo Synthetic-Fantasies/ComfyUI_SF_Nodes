@@ -40,8 +40,8 @@ def _ensure_rgb(image):
 
 
 def _resize_preserve_height(img_nhwc, out_h: int):
+    # kept for potential future use; not used when pasting original sizes
     _ensure_torch()
-    # Convert to NCHW for interpolate
     _, h, w, _ = img_nhwc.shape
     aspect = float(w) / float(h)
     out_w = max(1, int(round(out_h * aspect)))
@@ -83,6 +83,49 @@ def _choose_portrait_grid(num: int, target_ratio: float = 1.5) -> Tuple[int, int
     return rows, cols
 
 
+def _choose_layout_by_sizes(sizes: List[Tuple[int, int]], target_ratio: float = 1.5) -> Tuple[int, int, int, List[int]]:
+    """Choose columns count to approximate portrait aspect using original sizes.
+    Returns: (total_w, total_h, cols, row_heights)
+    """
+    n = len(sizes)
+    best = None
+    best_layout = None
+    for cols in range(1, n + 1):
+        rows = (n + cols - 1) // cols
+        row_heights: List[int] = []
+        row_widths: List[int] = []
+        for r in range(rows):
+            start = r * cols
+            end = min(start + cols, n)
+            if start >= n:
+                row_heights.append(0)
+                row_widths.append(0)
+                continue
+            w_sum = 0
+            h_max = 0
+            for (w, h) in sizes[start:end]:
+                w_sum += int(w)
+                h_max = max(h_max, int(h))
+            row_heights.append(h_max)
+            row_widths.append(w_sum)
+        total_w = max(row_widths) if row_widths else 0
+        total_h = sum(row_heights)
+        if total_w == 0 or total_h == 0:
+            continue
+        ratio = total_h / total_w
+        empty = rows * cols - n
+        score = (abs(ratio - target_ratio), empty, total_w * total_h)
+        if best is None or score < best:
+            best = score
+            best_layout = (total_w, total_h, cols, row_heights)
+    # Fallback to 1 column if needed
+    if best_layout is None:
+        total_w = max(w for w, _ in sizes)
+        total_h = sum(h for _, h in sizes)
+        return total_w, total_h, 1, [h for _, h in sizes]
+    return best_layout
+
+
 class SFImageGridAuto:
     @classmethod
     def INPUT_TYPES(cls):
@@ -108,64 +151,44 @@ class SFImageGridAuto:
             raise ValueError("No images provided")
         # Normalize to RGB
         img_list = [_ensure_rgb(im) for im in img_list]
-        # Determine grid arrangement (portrait target), then scale tiles preserving aspect
-        n = len(img_list)
-        rows, cols = _choose_portrait_grid(n)
-        row_height = 256
-        # Resize each image to common row height, preserve aspect; ensure CPU float32 NHWC contiguous
-        tiles = [
-            _resize_preserve_height(im, row_height)
-            .to(dtype=torch.float32, device="cpu")
-            .contiguous()
-            for im in img_list
-        ]
-        # Compute per-row widths and overall canvas size
-        row_widths: List[int] = []
-        for r in range(rows):
-            start = r * cols
-            end = min(start + cols, n)
-            if start >= n:
-                row_widths.append(0)
-                continue
-            width_sum = sum(int(t.shape[2]) for t in tiles[start:end])
-            row_widths.append(width_sum)
-        canvas_w = max(row_widths) if row_widths else 0
-        canvas_h = rows * row_height
-        if canvas_w <= 0 or canvas_h <= 0:
-            raise ValueError("Computed invalid canvas size")
-        # Compose grid using PIL when available (common pattern), fallback to tensor compose
+        # Determine layout using original image sizes; do not resize tiles
+        sizes: List[Tuple[int, int]] = [(int(t.shape[2]), int(t.shape[1])) for t in img_list]  # (w, h) from NHWC
+        total_w, total_h, cols, row_heights = _choose_layout_by_sizes(sizes)
+
+        # Prepare tiles as PIL for pasting
         if Image is not None:
-            grid_pil = Image.new("RGB", (int(canvas_w), int(canvas_h)))
-            for i, tile in enumerate(tiles):
-                r = i // cols
-                # X position is sum of previous widths in this row
-                start = r * cols
-                idx_in_row = i - start
-                x_offset = 0
-                for k in range(idx_in_row):
-                    x_offset += int(tiles[start + k].shape[2])
-                tile_pil = _tensor_to_pil(tile)
-                grid_pil.paste(tile_pil, (int(x_offset), int(r * row_height)))
-            # Convert back to tensor for pipeline
+            tiles_pil = [_tensor_to_pil(im.to(dtype=torch.float32, device="cpu")) for im in img_list]
+            grid_pil = Image.new("RGB", (int(total_w), int(total_h)))
+            y_cursor = 0
+            idx = 0
+            for r, row_h in enumerate(row_heights):
+                x_cursor = 0
+                for c in range(cols):
+                    if idx >= len(tiles_pil):
+                        break
+                    tile = tiles_pil[idx]
+                    grid_pil.paste(tile, (int(x_cursor), int(y_cursor)))
+                    x_cursor += tile.width
+                    idx += 1
+                y_cursor += row_h
             canvas = _pil_to_tensor_nhwc_float(grid_pil).to(dtype=torch.float32, device="cpu").contiguous()
         else:
-            canvas = torch.zeros((1, canvas_h, canvas_w, 3), dtype=torch.float32, device="cpu")
-            for i, tile in enumerate(tiles):
-                r = i // cols
-                # Place sequentially across the row
-                y0 = r * row_height
-                # current x is sum of previous widths in this row
-                start = r * cols
-                idx_in_row = i - start
-                x_offset = 0
-                for k in range(idx_in_row):
-                    x_offset += int(tiles[start + k].shape[2])
-                x0 = x_offset
-                canvas[:, y0:y0 + row_height, x0:x0 + int(tile.shape[2]), :] = tile
+            # Fallback: compose tensor canvas with original sizes
+            canvas = torch.zeros((1, int(total_h), int(total_w), 3), dtype=torch.float32, device="cpu")
+            y_cursor = 0
+            idx = 0
+            for r, row_h in enumerate(row_heights):
+                x_cursor = 0
+                for c in range(cols):
+                    if idx >= len(img_list):
+                        break
+                    tile = img_list[idx].to(dtype=torch.float32, device="cpu").contiguous()
+                    h = int(tile.shape[1]); w = int(tile.shape[2])
+                    canvas[:, y_cursor:y_cursor + h, x_cursor:x_cursor + w, :] = _ensure_rgb(tile)
+                    x_cursor += w
+                    idx += 1
+                y_cursor += row_h
             canvas = canvas.clamp(0.0, 1.0).contiguous()
-            # Also derive a PIL image for saving if needed
-            if Image is not None:
-                grid_pil = _tensor_to_pil(canvas)
         # Optionally save to disk using ComfyUI's folder_paths conventions
         if save_result:
             try:
