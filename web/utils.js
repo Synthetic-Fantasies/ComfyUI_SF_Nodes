@@ -1,3 +1,6 @@
+
+
+
 export const DEFAULT_HISTORY = [
   "A playful kitten wearing a colorful bow tie, sitting on a fluffy cloud, with a bright rainbow in the background",
   "A cheerful bunny in a pink dress holding a basket of flowers, standing in a sunny meadow with butterflies around",
@@ -150,7 +153,12 @@ export const Severity = Object.freeze({
   SUCCESS: "success",
 });
 
+export const allow_debug = false;
 
+
+export function SFConsoleLog(message) {
+  if (allow_debug) console.log(`${message}`);
+}
 
 
 export function toast(severity, summary, detail, life = 2000) {
