@@ -3,6 +3,7 @@ import { BaseSmartWidget, BaseSmartWidgetManager } from "./widgets/BaseSmartWidg
 import { SmartButton } from "./widgets/SmartButton.js";
 import { Shapes, SFToast } from "./utils.js";
 import { ImageHistoryTracker } from "./ImageHistoryTracker.js";
+import { ToastTracker } from "./ToastTracker.js";
 
 
 
@@ -38,18 +39,13 @@ app.registerExtension({
     };
 
     // other vars
-    let toastShownCountH = 0;
-    let toastShownCountPC = 0;
-    let toastShownCountI = 0;
-    const MAX_TOAST_SHOWS = 2;
+    const toastTracker = new ToastTracker();
 
-    function pushToImgs(newImage) {
-      return imageTracker.pushToImgs(newImage);
-    }
+
 
     function cycleImgs() {
       if (imageTracker.getImageCount() === 1) {
-        SFToast("info", "Only this image exist in this node history");
+        toastTracker.showToast("cycleImgs", "info", "Only this image exist in this node history");
         return;
       }
 
@@ -84,10 +80,7 @@ app.registerExtension({
 
         SFConsoleLog("Toggling between last two imagesTracked");
       } else {
-        if (toastShownCountPC < MAX_TOAST_SHOWS) {
-          SFToast("info", "You must execute this node at least twice");
-          toastShownCountPC++;
-        }
+        toastTracker.showToast("togglingLastTwo", "info", "You must execute this node at least twice");
       }
     }
 
@@ -126,10 +119,7 @@ app.registerExtension({
           toggleButtonActivation(c, compare);
         }
         if (!imageTracker.hasAnyImages()) {
-          if (toastShownCountH < MAX_TOAST_SHOWS) {
-            SFToast("info", "No images in this node history");
-            toastShownCountH++;
-          }
+          toastTracker.showToast("noImages", "info", "No images in this node history");
           return;
         }
         if (imageTracker.hasEnoughImagesForComparison()) {
@@ -182,10 +172,7 @@ app.registerExtension({
 
         // start compare
         if (!imageTracker.hasEnoughImagesForComparison()) {
-          if (toastShownCountI < MAX_TOAST_SHOWS) {
-            SFToast("info", "You must execute this node at least twice");
-            toastShownCountI++;
-          }
+          toastTracker.showToast("compareMode", "info", "You must execute this node at least twice");
           return;
         }
         compare = !compare;
@@ -212,9 +199,7 @@ app.registerExtension({
       setTimeout(() => {
         // push last image
         const lastImage = node.imgs?.at(-1);
-        if (!imageTracker.hasImage(lastImage)) {
-          pushToImgs(lastImage);
-        }
+        imageTracker.pushToImgs(lastImage);
 
         // Override draw function in ImagePreviewWidget
         const previewWidget = node.widgets.find((widget) => !(widget instanceof BaseSmartWidget));
