@@ -42,7 +42,9 @@ python -c "import sf_nodes_all as m; print('Loaded nodes:', list(m.NODE_CLASS_MA
 
 - `SFPreviewCompare` (category: `SF/Preview`)
   - Compare A/B images with circular `index` across arrays of IMAGE.
-  - Modes: `A`, `B`, `SideBySide` (resizes to same height and concatenates).
-  - UI adds ◀ ▶ buttons to change `index` quickly.
+  - UI toggles A/B/Swipe/Area at display time; ◀ ▶ buttons for `index`.
+ - `SFImageGridAuto` (category: `SF/Image`)
+   - Composes an image grid without resizing tiles; optional save with `filename_prefix` and `save_result` like SaveImage.
+   - UI preview is embedded in the node via extension.
 
  

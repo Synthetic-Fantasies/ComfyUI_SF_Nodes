@@ -73,6 +73,14 @@
         return prevOnExecuted?.apply(this, arguments);
       };
     }
+    ,
+    async nodeCreated(node, appRef) {
+      try {
+        if (node?.comfyClass === NODE_TYPE) {
+          ensureImageWidget(node, appRef);
+        }
+      } catch (e) {}
+    }
   });
 })();
 

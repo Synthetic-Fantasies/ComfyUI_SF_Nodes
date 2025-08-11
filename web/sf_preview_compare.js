@@ -194,5 +194,13 @@
         return prevOnExecuted?.apply(this, arguments);
       };
     }
+    ,
+    async nodeCreated(node, appRef) {
+      try {
+        if (node?.comfyClass === NODE_TYPE) {
+          addButtons(node, appRef);
+        }
+      } catch (e) {}
+    }
   });
 })();
