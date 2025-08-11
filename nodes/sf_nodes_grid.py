@@ -70,7 +70,11 @@ class SFImageGridAuto:
         return {
             "required": {
                 "images": ("IMAGE", {}),
-            }
+            },
+            "optional": {
+                "filename_prefix": ("STRING", {"default": "SFGrid"}),
+                "save_result": ("BOOLEAN", {"default": False}),
+            },
         }
 
     RETURN_TYPES = ("IMAGE",)
@@ -78,7 +82,7 @@ class SFImageGridAuto:
     FUNCTION = "make_grid"
     CATEGORY = "SF/Image"
 
-    def make_grid(self, images):
+    def make_grid(self, images, filename_prefix: str = "SFGrid", save_result: bool = False):
         _ensure_torch()
         img_list = _to_list_of_images(images)
         if not img_list:
@@ -121,8 +125,31 @@ class SFImageGridAuto:
             x0 = x_offset
             x1 = x0 + int(tile.shape[2])
             canvas[:, y0:y1, x0:x1, :] = tile
-        return (canvas,)
+        # Optionally save to disk using ComfyUI's folder_paths conventions
+        if save_result:
+            try:
+                import os
+                from PIL import Image  # type: ignore
+                try:
+                    import folder_paths  # type: ignore
+                    output_dir = folder_paths.get_output_directory()
+                    full_output_folder, filename, counter, subfolder, used_prefix = folder_paths.get_save_image_path(
+                        filename_prefix or "SFGrid", output_dir
+                    )
+                    os.makedirs(full_output_folder, exist_ok=True)
+                    file_path = os.path.join(full_output_folder, filename)
+                except Exception:
+                    os.makedirs("output", exist_ok=True)
+                    from time import time as _now
+                    file_path = os.path.join("output", f"{(filename_prefix or 'SFGrid')}_{int(_now())}.png")
 
+                arr = (canvas[0].detach().cpu().clamp(0, 1).numpy() * 255).astype("uint8")
+                img = Image.fromarray(arr, mode="RGB")
+                img.save(file_path)
+            except Exception:
+                # Best-effort save; ignore failures at UI/runtime
+                pass
+        return (canvas,)
 
 NODE_CLASS_MAPPINGS = {
     "SFImageGridAuto": SFImageGridAuto,

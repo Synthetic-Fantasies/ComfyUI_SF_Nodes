@@ -123,6 +123,7 @@
     name: 'sf.preview.compare',
     async beforeRegisterNodeDef(nodeType, nodeData, appRef) {
       if (nodeData?.name !== NODE_TYPE) return;
+      try { console.debug('[SFPreviewCompare] extension active'); } catch (e) {}
       const onNodeCreated = nodeType.prototype.onNodeCreated;
       nodeType.prototype.onNodeCreated = function() {
         onNodeCreated?.apply(this, arguments);
@@ -167,6 +168,30 @@
         } catch (e) {
           // ignore draw errors
         }
+      };
+      // Ensure widget exists and populate on execution if ComfyWidgets didn't
+      const prevOnExecuted = nodeType.prototype.onExecuted;
+      nodeType.prototype.onExecuted = async function(message) {
+        try {
+          const widget = this.widgets?.find?.(w => w.type === 'image' || w.name === 'image');
+          if (widget && !widget.value) {
+            // Try multiple known shapes
+            const ref = message?.images?.[0] || message?.image || (message?.result?.[0]?.[0]);
+            if (ref && appRef?.api?.getImage) {
+              const blob = await appRef.api.getImage(ref);
+              const url = URL.createObjectURL(blob);
+              const img = new Image();
+              img.onload = () => {
+                URL.revokeObjectURL(url);
+                widget.value = img;
+                this.img = img;
+                this.setDirtyCanvas(true, true);
+              };
+              img.src = url;
+            }
+          }
+        } catch (e) {}
+        return prevOnExecuted?.apply(this, arguments);
       };
     }
   });
