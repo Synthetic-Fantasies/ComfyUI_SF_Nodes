@@ -63,6 +63,30 @@ class SFPreviewCompare:
             }
         }
 
+    @classmethod
+    def UI(cls):
+        return {
+            "title": "SF Preview Compare",
+            "type": "node",
+            "props": [
+                {
+                    "name": "mode",
+                    "label": "Mode",
+                    "type": "select",
+                    "options": ["A", "B", "Swipe", "Area"],
+                    "default": "Swipe",
+                },
+                {
+                    "name": "index",
+                    "label": "Index",
+                    "type": "int",
+                    "default": 0,
+                    "min": 0,
+                    "max": 10000,
+                },
+            ],
+        }
+
     RETURN_TYPES = ("IMAGE", "INT")
     RETURN_NAMES = ("image", "index")
     FUNCTION = "render"

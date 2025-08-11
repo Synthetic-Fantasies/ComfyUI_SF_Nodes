@@ -141,6 +141,19 @@ class SFImageGridAuto:
             },
         }
 
+    @classmethod
+    def UI(cls):
+        return {
+            "title": "SF Image Grid (Auto)",
+            "type": "node",
+            "props": [
+                {"name": "favor_portrait", "label": "Favor Portrait", "type": "boolean", "default": True},
+                {"name": "pad_to_multiple", "label": "Pad Multiple", "type": "int", "default": 8, "min": 1, "max": 128},
+                {"name": "filename_prefix", "label": "Filename Prefix", "type": "text", "default": "SFGrid"},
+                {"name": "save_result", "label": "Save Result", "type": "boolean", "default": False},
+            ],
+        }
+
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("image",)
     FUNCTION = "make_grid"
