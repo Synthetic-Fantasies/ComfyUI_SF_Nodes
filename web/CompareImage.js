@@ -4,7 +4,7 @@ import { BaseSmartWidget, BaseSmartWidgetManager,} from "./widgets/BaseSmartWidg
 import { SmartButton } from "./widgets/SmartButton.js";
 
 
-NODE_NAME="SFCompareImage";
+const NODE_NAME="SFCompareImage";
 app.registerExtension({
 
   name: "SF.CompareImage",

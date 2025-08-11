@@ -7,7 +7,7 @@ import { ToastTracker } from "./ToastTracker.js";
 
 
 
-NODE_NAME="SFPreviewImage";
+const NODE_NAME="SFPreviewImage";
 
 app.registerExtension({
   name: "SF.PreviewImage",
