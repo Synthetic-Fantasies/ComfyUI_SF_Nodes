@@ -113,8 +113,15 @@ app.registerExtension({
       o.color = "#222222";
       o.font = buttonFont;
       o.onClick = () => {
-        toggleButtonActivation(o);
-        initCompare("O");
+        // If already in circle compare, toggle swap order; otherwise switch to circle mode
+        if (compare && compare.mode === "O") {
+          compare.swap = !compare.swap;
+        } else {
+          toggleButtonActivation(o);
+          initCompare("O");
+          compare.swap = false;
+        }
+        node.setDirtyCanvas(true, false);
       };
 
       // index controls last (◀, ▶)
@@ -315,7 +322,7 @@ function getPairByIndex(node, idx){
 function overrideDraw(node, widget_width, y, ctx, compare, mouse) {
   if (!compare || !compare.mode) return;
   
-  const { img1, img2 } = getPairByIndex(node, node._sfIndex);
+  let { img1, img2 } = getPairByIndex(node, node._sfIndex);
   if(!img1 || !img2) return;
 
   const dw = widget_width;
@@ -412,6 +419,9 @@ function overrideDraw(node, widget_width, y, ctx, compare, mouse) {
 
     // ctx.restore();
   } else if (compare.mode === "O") {
+    if (compare.swap) {
+      const tmp = img1; img1 = img2; img2 = tmp;
+    }
     // Circle mode
     const radius = Math.min(w, h) * 0.15; // 30% of image size
     const centerX = Math.max(imgX + radius, Math.min(mouseX, imgX + w - radius));
