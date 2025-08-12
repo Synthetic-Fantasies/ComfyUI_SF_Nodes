@@ -301,7 +301,7 @@ function overrideDraw(node, widget_width, y, ctx, compare, mouse) {
   let mouseX = 0;
   let mouseY = 0;
   
-  if(compareWay == "makadi") {
+  if(compareWay == "SF") {
     // true mouse any where
     const graphMouse = app.canvas.graph_mouse;
     mouseX = graphMouse[0] - node.pos[0];

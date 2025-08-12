@@ -242,8 +242,8 @@ class SFCompareImage(PreviewImage):
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "image_a": ("IMAGE", {}),
-                "image_b": ("IMAGE", {}),
+                "A": ("IMAGE", {}),
+                "B": ("IMAGE", {}),
             }
         }
 

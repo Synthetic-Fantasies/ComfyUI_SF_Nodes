@@ -6,14 +6,14 @@ from .backend.image_nodes import SFPreviewImage, SFCompareImage, SFImageGrid
 NODE_CLASS_MAPPINGS = {
     "SFWildcardsPromptMatrix": SFWildcardsPromptMatrix,
     "SFPreviewImage": SFPreviewImage,
-    "SFCompare": SFCompareImage,
+    "SFCompareImage": SFCompareImage,
     "SFImageGrid": SFImageGrid,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "SFWildcardsPromptMatrix": "SF Wildcards Prompt Matrix+",
     "SFPreviewImage": "SF Preview Image",
-    "SFCompare": "SF Compare",
+    "SFCompareImage": "SF Compare",
     "SFImageGrid": "SF Image Grid",
 }
 
