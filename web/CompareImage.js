@@ -59,21 +59,7 @@ app.registerExtension({
       const offset = 30;
       const buttonFont = "14px Arial";
 
-      // index controls
-      const prev = new SmartButton(bx - offset, by, r, 20, node, "◀");
-      prev.allowVisualHover = true;
-      prev.textYoffset = 1.1;
-      prev.isVisible = startVisible;
-      prev.shape = Shapes.CIRCLE;
-      prev.outlineWidth = 1;
-      prev.outlineColor = "#656565";
-      prev.color = "#222222";
-      prev.font = buttonFont;
-      prev.onClick = () => {
-        const len = getPairCount(node);
-        node._sfIndex = (node._sfIndex - 1 + len) % Math.max(1, len);
-        node.setDirtyCanvas(true, false);
-      };
+      // primary mode buttons first (A, B, |, O)
 
       const a = new SmartButton(bx, by, r, 20, node, "A");
       a.allowVisualHover = true;
@@ -131,7 +117,23 @@ app.registerExtension({
         initCompare("O");
       };
 
-      const next = new SmartButton(bx + 4 * offset, by, r, 20, node, "▶");
+      // index controls last (◀, ▶)
+      const prev = new SmartButton(bx + 4 * offset, by, r, 20, node, "◀");
+      prev.allowVisualHover = true;
+      prev.textYoffset = 1.1;
+      prev.isVisible = startVisible;
+      prev.shape = Shapes.CIRCLE;
+      prev.outlineWidth = 1;
+      prev.outlineColor = "#656565";
+      prev.color = "#222222";
+      prev.font = buttonFont;
+      prev.onClick = () => {
+        const len = getPairCount(node);
+        node._sfIndex = (node._sfIndex - 1 + len) % Math.max(1, len);
+        node.setDirtyCanvas(true, false);
+      };
+
+      const next = new SmartButton(bx + 5 * offset, by, r, 20, node, "▶");
       next.allowVisualHover = true;
       next.textYoffset = 1.1;
       next.isVisible = startVisible;
