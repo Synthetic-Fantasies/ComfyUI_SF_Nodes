@@ -19,6 +19,7 @@ app.registerExtension({
 
     // init size
     node.size = [285, 330];
+    node._sfIndex = 0;
 
     let compare = null;
     let mouse = {
@@ -57,6 +58,22 @@ app.registerExtension({
       const r = 25;
       const offset = 30;
       const buttonFont = "14px Arial";
+
+      // index controls
+      const prev = new SmartButton(bx - offset, by, r, 20, node, "◀");
+      prev.allowVisualHover = true;
+      prev.textYoffset = 1.1;
+      prev.isVisible = startVisible;
+      prev.shape = Shapes.CIRCLE;
+      prev.outlineWidth = 1;
+      prev.outlineColor = "#656565";
+      prev.color = "#222222";
+      prev.font = buttonFont;
+      prev.onClick = () => {
+        const len = getPairCount(node);
+        node._sfIndex = (node._sfIndex - 1 + len) % Math.max(1, len);
+        node.setDirtyCanvas(true, false);
+      };
 
       const a = new SmartButton(bx, by, r, 20, node, "A");
       a.allowVisualHover = true;
@@ -112,6 +129,21 @@ app.registerExtension({
       o.onClick = () => {
         toggleButtonActivation(o);
         initCompare("O");
+      };
+
+      const next = new SmartButton(bx + 4 * offset, by, r, 20, node, "▶");
+      next.allowVisualHover = true;
+      next.textYoffset = 1.1;
+      next.isVisible = startVisible;
+      next.shape = Shapes.CIRCLE;
+      next.outlineWidth = 1;
+      next.outlineColor = "#656565";
+      next.color = "#222222";
+      next.font = buttonFont;
+      next.onClick = () => {
+        const len = getPairCount(node);
+        node._sfIndex = (node._sfIndex + 1) % Math.max(1, len);
+        node.setDirtyCanvas(true, false);
       };
     }
 
@@ -223,11 +255,9 @@ app.registerExtension({
         // If node node has images then we add an open in new tab item
         let img = null;
 
-        if (compare.mode === "A") {
-          img = node.imgs[0];
-        } else if (compare.mode === "B") {
-          img = node.imgs[1];
-        }
+        const { img1, img2 } = getPairByIndex(node, node._sfIndex);
+        if (compare.mode === "A") img = img1;
+        else if (compare.mode === "B") img = img2;
 
         if (img) {
           options.unshift(
@@ -268,20 +298,23 @@ app.registerExtension({
 });
 
 const compareWay = app.extensionManager.setting.get("SF.Nodes.Compare Mode", "SF");
+function getPairCount(node){
+  if(!node.imgs || node.imgs.length < 2) return 0;
+  return Math.floor(node.imgs.length / 2);
+}
+
+function getPairByIndex(node, idx){
+  if(!node.imgs || node.imgs.length < 2) return {img1:null,img2:null};
+  const half = Math.floor(node.imgs.length / 2);
+  const i = ((idx % half) + half) % half;
+  return { img1: node.imgs[i], img2: node.imgs[half + i] };
+}
+
 function overrideDraw(node, widget_width, y, ctx, compare, mouse) {
   if (!compare || !compare.mode) return;
   
-  let img1 = null;
-  let img2 = null;
-
-  if (node.imgs.length > 2) {
-    const half = Math.floor(node.imgs.length / 2);
-    img1 = node.imgs[0];
-    img2 = node.imgs[half];
-  } else {
-    img1 = node.imgs[0];
-    img2 = node.imgs[1];
-  }
+  const { img1, img2 } = getPairByIndex(node, node._sfIndex);
+  if(!img1 || !img2) return;
 
   const dw = widget_width;
   const dh = node.size[1] - y;
