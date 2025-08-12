@@ -463,6 +463,30 @@ function overrideDraw(node, widget_width, y, ctx, compare, mouse) {
     // draw img 2 only
     ctx.drawImage(img2, 0, 0, img2.naturalWidth, img2.naturalHeight, imgX, imgY, w, h);
   }
+
+  // Draw index label bottom-right: "<current> out of <total>"
+  try {
+    const totalPairs = getPairCount(node);
+    if (totalPairs > 0) {
+      const current = (((node._sfIndex % totalPairs) + totalPairs) % totalPairs) + 1;
+      const label = `${current} out of ${totalPairs}`;
+      ctx.save();
+      ctx.font = "12px Arial";
+      ctx.textBaseline = "bottom";
+      // Shadowed white text for readability
+      ctx.shadowColor = "black";
+      ctx.shadowBlur = 4;
+      ctx.fillStyle = "white";
+      const margin = 6;
+      const tw = ctx.measureText(label).width;
+      const tx = widget_width - margin - tw;
+      const ty = y + (node.size[1] - y) - margin;
+      ctx.fillText(label, tx, ty);
+      ctx.restore();
+    }
+  } catch (e) {
+    // ignore draw label errors
+  }
 }
 
 function getCopyImageOption(img) {
