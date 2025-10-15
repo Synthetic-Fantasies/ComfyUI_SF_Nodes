@@ -1,6 +1,8 @@
 import os
 import re
 import random
+import pathlib
+import folder_paths
 from typing import Dict, List, Tuple
 
 
@@ -12,11 +14,8 @@ def _resolve_wildcards_dir() -> str:
     env_dir = os.environ.get("COMFYUI_WILDCARDS_DIR")
     if env_dir and os.path.isdir(env_dir):
         return env_dir
-
     # 2) Try ComfyUI's folder_paths if available
     try:
-        import folder_paths  # type: ignore
-
         # Some builds may expose a helper; prefer explicit functions if present
         for attr in ("get_wildcards_dir", "get_wildcard_dir"):
             if hasattr(folder_paths, attr):
@@ -25,9 +24,9 @@ def _resolve_wildcards_dir() -> str:
                     return d
 
         # Otherwise derive ComfyUI root from module path and use 'wildcards'
-        import pathlib
+
         root = pathlib.Path(folder_paths.__file__).resolve().parents[1]
-        candidate = root / "wildcards"
+        candidate = root / "models" / "wildcards"
         if candidate.is_dir():
             return str(candidate)
     except Exception:
@@ -65,7 +64,7 @@ class SFWildcardsPromptMatrix:
         return {
             "required": {
                 "prompt": ("STRING", {"default": "A photo of __animals__ in __colors__"}),
-                "count": ("INT", {"default": 4, "min": 1, "max": 1024}),
+                "count": ("INT", {"default": 4, "min": 1, "max": 2048}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 2**31 - 1}),
                 "deterministic": ("BOOLEAN", {"default": True}),
             }
@@ -80,8 +79,8 @@ class SFWildcardsPromptMatrix:
     def generate(self, prompt: str, count: int, seed: int, deterministic: bool):
         wildcards_dir = _resolve_wildcards_dir()
         # Find all wildcard occurrences in order of appearance
-        tokens_in_order = list(_WILDCARD_PATTERN.finditer(prompt))
-        token_names = [m.group(1) for m in tokens_in_order]
+        matches_in_order = list(_WILDCARD_PATTERN.finditer(prompt))
+        token_names = [match.group(1) for match in matches_in_order]
 
         # Preload files per unique token
         unique_tokens = list(dict.fromkeys(token_names))  # preserve order
