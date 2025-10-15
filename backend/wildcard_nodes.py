@@ -70,9 +70,9 @@ class SFWildcardsPromptMatrix:
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING")
-    RETURN_NAMES = ("prompts", "wildcard_lines", "tags", "tags_list", "wildcards_dir")
-    OUTPUT_IS_LIST = (True, True, True, True, False)
+    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "INT")
+    RETURN_NAMES = ("prompts", "wildcard_lines", "tags", "tags_list", "seeds")
+    OUTPUT_IS_LIST = (True, True, True, True, True)
     FUNCTION = "generate"
     CATEGORY = "SF/Text"
 
@@ -95,29 +95,69 @@ class SFWildcardsPromptMatrix:
         out_meta: List[str] = []
         out_tags: List[str] = []
         out_tags_list: List[List[str]] = []
+        out_seeds: List[int] = []
 
-        for i in range(count):
+        # In deterministic mode, calculate total combinations and cap iterations
+        if deterministic and matches_in_order:
+            # Calculate total combinations (product of all wildcard sizes)
+            sizes = [len(file_to_choices[token_names[idx]][1]) for idx in range(len(matches_in_order))]
+            total_combinations = 1
+            for size in sizes:
+                total_combinations *= size
+            # Cap count to total combinations
+            actual_count = min(count, total_combinations)
+        else:
+            actual_count = count
+
+        for i in range(actual_count):
             current_prompt = prompt
             tags: List[str] = []
 
-            # For deterministic behavior, reseed per iteration for reproducibility
             if deterministic:
-                # Seed must be a single supported type; derive an int from seed and iteration
-                rng.seed((seed * 1_000_003 + i) & 0xFFFFFFFF)
+                # Deterministic mode: systematic iteration, but output random seeds
+                iteration_seed = random.randint(0, 2**31 - 1)
+            else:
+                # Non-deterministic mode: random selection with random seed
+                iteration_seed = random.randint(0, 2**31 - 1)
+                rng.seed(iteration_seed)
 
-            # Replace occurrences from left-to-right; choose a line index each time
+            # Replace occurrences from left-to-right
             replacements: List[Tuple[Tuple[int, int], str, str, str]] = []
-            for m in tokens_in_order:
-                tok = m.group(1)
+
+            if deterministic:
+                # Cartesian product iteration: rightmost wildcard increments fastest
+                # Like an odometer: [0,0,0] -> [0,0,1] -> [0,0,2] -> [0,1,0] -> [0,1,1] ...
+                # Calculate indices for each wildcard position
+                iteration_offset = seed + i
+                wildcard_indices: List[int] = []
+
+                # Get the size of each wildcard's choices (in order of appearance)
+                sizes = [len(file_to_choices[token_names[idx]][1]) for idx in range(len(matches_in_order))]
+
+                # Calculate index for each wildcard using base conversion logic
+                temp_offset = iteration_offset
+                for size in reversed(sizes):
+                    wildcard_indices.insert(0, temp_offset % size)
+                    temp_offset //= size
+
+            for wildcard_idx, matches in enumerate(matches_in_order):
+                tok = matches.group(1)
                 filename, choices = file_to_choices[tok]
-                idx = rng.randrange(len(choices)) if len(choices) > 1 else 0
+
+                if deterministic:
+                    # Use pre-calculated index from cartesian product
+                    idx = wildcard_indices[wildcard_idx]
+                else:
+                    # Random selection for non-deterministic mode
+                    idx = rng.randrange(len(choices)) if len(choices) > 1 else 0
+
                 value, lineno = choices[idx]
                 # Split once on '|': use first segment for replacement; keep second as label (if present)
                 head, sep, tail = value.partition("|")
-                replacement_value = (head.strip() or value.strip())
+                replacement_value = head.strip() or value.strip()
                 label_text = tail.strip() if sep else ""
                 tag = f"[{filename}:{lineno}]"
-                replacements.append(((m.start(), m.end()), replacement_value, tag, label_text))
+                replacements.append(((matches.start(), matches.end()), replacement_value, tag, label_text))
 
             # Apply replacements from end to start to keep indices valid
             for (start, end), value, tag, label_text in reversed(replacements):
@@ -142,7 +182,6 @@ class SFWildcardsPromptMatrix:
             out_meta.append("".join(tags))
             out_tags.append(",".join(labels_ordered))
             out_tags_list.append(labels_ordered)
+            out_seeds.append(iteration_seed)
 
-        return (out_prompts, out_meta, out_tags, out_tags_list, wildcards_dir)
-
-
+        return (out_prompts, out_meta, out_tags, out_tags_list, out_seeds)
