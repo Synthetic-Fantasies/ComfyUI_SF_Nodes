@@ -159,10 +159,10 @@ class SFImageGridAuto:
 
         # Prepare tiles as PIL for pasting
         if Image is not None:combined = torch.cat([a, b], dim=2).clamp(0.0, 1.0).contiguous()dx]
-                    grid_pil.paste(tile, (int(x_cursor), int(y_cursor)))
-                    x_cursor += tile.width
-                    idx += 1
-                y_cursor += row_h
+                grid_pil.paste(tile, (int(x_cursor), int(y_cursor)))
+            x_cursor += tile.width
+            idx += 1
+            y_cursor += row_h
             canvas = _pil_to_tensor_nhwc_float(grid_pil).to(dtype=torch.float32, device="cpu").contiguous()
         else:
             # Fallback: compose tensor canvas with original sizes
