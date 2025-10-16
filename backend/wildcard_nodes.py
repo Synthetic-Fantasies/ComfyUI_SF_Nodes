@@ -59,14 +59,21 @@ def _read_wildcard_file(base_dir: str, token: str) -> Tuple[str, List[Tuple[str,
 
 
 class SFWildcardsPromptMatrix:
+    # Class variable to track odometer position per node instance
+    _odometer_positions = {}
+    
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "prompt": ("STRING", {"default": "A photo of __animals__ in __colors__"}),
+                "prompt": ("STRING", {
+                    "default": "A photo of __animals__ in __colors__",
+                    "multiline": True
+                }),
                 "count": ("INT", {"default": 4, "min": 1, "max": 2048}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 2**31 - 1}),
-                "deterministic": ("BOOLEAN", {"default": True}),
+                "sequential": ("BOOLEAN", {"default": True}),
+                "offset": ("INT", {"default": 0, "min": 0, "max": 2**31 - 1}),
             }
         }
 
@@ -76,7 +83,7 @@ class SFWildcardsPromptMatrix:
     FUNCTION = "generate"
     CATEGORY = "SF/Text"
 
-    def generate(self, prompt: str, count: int, seed: int, deterministic: bool):
+    def generate(self, prompt: str, count: int, seed: int, sequential: bool, offset: int = 0):
         wildcards_dir = _resolve_wildcards_dir()
         # Find all wildcard occurrences in order of appearance
         matches_in_order = list(_WILDCARD_PATTERN.finditer(prompt))
@@ -89,7 +96,16 @@ class SFWildcardsPromptMatrix:
             filename, choices = _read_wildcard_file(wildcards_dir, tok)
             file_to_choices[tok] = (filename, choices)
 
-        rng = random.Random(seed if deterministic else None)
+        # Create a unique key for this node instance based on prompt content
+        node_key = hash(prompt + str(seed))
+        
+        # Get or initialize odometer position for this node
+        if node_key not in self._odometer_positions:
+            self._odometer_positions[node_key] = offset
+        
+        current_odometer_pos = self._odometer_positions[node_key]
+        
+        rng = random.Random(seed if not sequential else None)
 
         out_prompts: List[str] = []
         out_meta: List[str] = []
@@ -97,8 +113,8 @@ class SFWildcardsPromptMatrix:
         out_tags_list: List[List[str]] = []
         out_seeds: List[int] = []
 
-        # In deterministic mode, calculate total combinations and cap iterations
-        if deterministic and matches_in_order:
+        # In sequential mode, calculate total combinations and cap iterations
+        if sequential and matches_in_order:
             # Calculate total combinations (product of all wildcard sizes)
             sizes = [len(file_to_choices[token_names[idx]][1]) for idx in range(len(matches_in_order))]
             total_combinations = 1
@@ -113,7 +129,7 @@ class SFWildcardsPromptMatrix:
             current_prompt = prompt
             tags: List[str] = []
 
-            if deterministic:
+            if sequential:
                 # Deterministic mode: systematic iteration, but output random seeds
                 iteration_seed = random.randint(0, 2**31 - 1)
             else:
@@ -124,11 +140,11 @@ class SFWildcardsPromptMatrix:
             # Replace occurrences from left-to-right
             replacements: List[Tuple[Tuple[int, int], str, str, str]] = []
 
-            if deterministic:
+            if sequential:
                 # Cartesian product iteration: rightmost wildcard increments fastest
                 # Like an odometer: [0,0,0] -> [0,0,1] -> [0,0,2] -> [0,1,0] -> [0,1,1] ...
-                # Calculate indices for each wildcard position
-                iteration_offset = seed + i
+                # Calculate indices for each wildcard position using current odometer position
+                iteration_offset = current_odometer_pos + i
                 wildcard_indices: List[int] = []
 
                 # Get the size of each wildcard's choices (in order of appearance)
@@ -144,11 +160,11 @@ class SFWildcardsPromptMatrix:
                 tok = matches.group(1)
                 filename, choices = file_to_choices[tok]
 
-                if deterministic:
+                if sequential:
                     # Use pre-calculated index from cartesian product
                     idx = wildcard_indices[wildcard_idx]
                 else:
-                    # Random selection for non-deterministic mode
+                    # Random selection for non-sequential mode
                     idx = rng.randrange(len(choices)) if len(choices) > 1 else 0
 
                 value, lineno = choices[idx]
@@ -183,5 +199,14 @@ class SFWildcardsPromptMatrix:
             out_tags.append(",".join(labels_ordered))
             out_tags_list.append(labels_ordered)
             out_seeds.append(iteration_seed)
+
+        # Update odometer position for next run
+        if sequential and matches_in_order:
+            new_position = current_odometer_pos + actual_count
+            # Reset to 0 if we've exceeded total combinations
+            if new_position >= total_combinations:
+                self._odometer_positions[node_key] = 0
+            else:
+                self._odometer_positions[node_key] = new_position
 
         return (out_prompts, out_meta, out_tags, out_tags_list, out_seeds)

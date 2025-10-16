@@ -4,7 +4,8 @@ import folder_paths # type: ignore
 import random
 from PIL import Image
 from typing import List, Tuple
-import torch  
+import torch
+import torch.nn.functional as F  
 
 
 
