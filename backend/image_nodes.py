@@ -1047,3 +1047,298 @@ class SFTimestampPath:
         full_path = os.path.join(directory, final_filename)
         
         return (full_path, directory, final_filename)
+
+
+class SFOdometer:
+    """
+    An odometer node that maintains a counter between executions.
+    Can count up or down with configurable step size and reset functionality.
+    """
+    
+    # Class variable to store counter states per node instance
+    _counter_states = {}
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "start_value": ("INT", {"default": 0, "min": -999999, "max": 999999}),
+                "step": ("INT", {"default": 1, "min": -999999, "max": 999999}),
+                "direction": (["up", "down"], {"default": "up"}),
+            },
+            "optional": {
+                "min_value": ("INT", {"default": -999999, "min": -999999, "max": 999999}),
+                "max_value": ("INT", {"default": 999999, "min": -999999, "max": 999999}),
+                "wrap_around": ("BOOLEAN", {"default": False}),
+                "reset_counter": (["keep", "reset"], {"default": "keep"}),
+            }
+        }
+
+    RETURN_TYPES = ("INT", "STRING", "BOOLEAN", "BOOLEAN")
+    RETURN_NAMES = ("value", "value_str", "at_min", "at_max")
+    FUNCTION = "count"
+    CATEGORY = "SF/Utils"
+    DESCRIPTION = "Persistent counter that increments/decrements on each execution. Has reset button and optional min/max limits."
+
+    def count(self, start_value, step, direction="up", min_value=-999999, max_value=999999, wrap_around=False, reset_counter="keep"):
+        """
+        Maintain a persistent counter that changes on each execution.
+        
+        Args:
+            start_value: Initial value for the counter
+            step: Amount to increment/decrement by
+            direction: "up" or "down" counting direction
+            reset: If True, reset counter to start_value
+            min_value: Minimum allowed value
+            max_value: Maximum allowed value
+            wrap_around: If True, wrap around at min/max limits
+        """
+        # Create a unique key for this node instance
+        # Using a combination of parameters to identify unique instances
+        node_key = hash((start_value, step, direction, min_value, max_value))
+        
+        # Initialize or reset the counter
+        if node_key not in self._counter_states or reset_counter == "reset":
+            self._counter_states[node_key] = start_value
+            current_value = start_value
+        else:
+            # Get current value and apply step
+            current_value = self._counter_states[node_key]
+            
+            # Apply step based on direction
+            if direction == "up":
+                current_value += step
+            else:  # direction == "down"
+                current_value -= step
+        
+        # Handle min/max limits
+        at_min = False
+        at_max = False
+        
+        if current_value < min_value:
+            at_min = True
+            if wrap_around:
+                current_value = max_value
+            else:
+                current_value = min_value
+        elif current_value > max_value:
+            at_max = True
+            if wrap_around:
+                current_value = min_value
+            else:
+                current_value = max_value
+        
+        # Update stored state
+        self._counter_states[node_key] = current_value
+        
+        # Convert to string for text-based uses
+        value_str = str(current_value)
+        
+        return (current_value, value_str, at_min, at_max)
+
+
+class SFSequence:
+    """
+    A sequence generator that cycles through a list of values.
+    Maintains position between executions with reset functionality.
+    """
+    
+    # Class variable to store sequence states per node instance
+    _sequence_states = {}
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "sequence": ("STRING", {
+                    "default": "1,2,3,4,5",
+                    "multiline": True
+                }),
+                "separator": ("STRING", {"default": ","}),
+            },
+            "optional": {
+                "loop": ("BOOLEAN", {"default": True}),
+                "direction": (["forward", "backward", "ping_pong"], {"default": "forward"}),
+                "reset_sequence": (["keep", "reset"], {"default": "keep"}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING", "INT", "INT", "BOOLEAN", "BOOLEAN")
+    RETURN_NAMES = ("current_value", "index", "length", "at_start", "at_end")
+    FUNCTION = "next_value"
+    CATEGORY = "SF/Utils"
+    DESCRIPTION = "Cycles through a sequence of values. Supports forward, backward, and ping-pong modes with reset."
+
+    def next_value(self, sequence, separator=",", loop=True, direction="forward", reset_sequence="keep"):
+        """
+        Get the next value from a sequence, maintaining position between executions.
+        
+        Args:
+            sequence: String containing sequence values
+            separator: Character(s) to split the sequence
+            reset: If True, reset to start of sequence
+            loop: If True, loop back to start when reaching end
+            direction: "forward", "backward", or "ping_pong"
+        """
+        # Parse the sequence
+        if not sequence.strip():
+            return ("", 0, 0, True, True)
+        
+        values = [v.strip() for v in sequence.split(separator) if v.strip()]
+        if not values:
+            return ("", 0, 0, True, True)
+        
+        sequence_length = len(values)
+        
+        # Create a unique key for this node instance
+        node_key = hash((sequence, separator, direction))
+        
+        # Initialize or reset the position
+        if node_key not in self._sequence_states or reset_sequence == "reset":
+            if direction == "backward":
+                self._sequence_states[node_key] = {"index": sequence_length - 1, "ping_pong_forward": False}
+            else:
+                self._sequence_states[node_key] = {"index": 0, "ping_pong_forward": True}
+        
+        state = self._sequence_states[node_key]
+        current_index = state["index"]
+        
+        # Get current value
+        current_value = values[current_index]
+        
+        # Calculate next position for next execution
+        if direction == "forward":
+            next_index = current_index + 1
+            if next_index >= sequence_length:
+                if loop:
+                    next_index = 0
+                else:
+                    next_index = sequence_length - 1
+        elif direction == "backward":
+            next_index = current_index - 1
+            if next_index < 0:
+                if loop:
+                    next_index = sequence_length - 1
+                else:
+                    next_index = 0
+        else:  # ping_pong
+            ping_pong_forward = state.get("ping_pong_forward", True)
+            
+            if ping_pong_forward:
+                next_index = current_index + 1
+                if next_index >= sequence_length:
+                    if loop:
+                        next_index = sequence_length - 2 if sequence_length > 1 else 0
+                        ping_pong_forward = False
+                    else:
+                        next_index = sequence_length - 1
+            else:
+                next_index = current_index - 1
+                if next_index < 0:
+                    if loop:
+                        next_index = 1 if sequence_length > 1 else 0
+                        ping_pong_forward = True
+                    else:
+                        next_index = 0
+            
+            state["ping_pong_forward"] = ping_pong_forward
+        
+        # Update state for next execution
+        state["index"] = next_index
+        
+        # Calculate status flags
+        at_start = current_index == 0
+        at_end = current_index == sequence_length - 1
+        
+        return (current_value, current_index, sequence_length, at_start, at_end)
+
+
+class SFTimer:
+    """
+    A timer node that tracks elapsed time and execution count.
+    Can be reset and provides various time formats.
+    """
+    
+    # Class variable to store timer states per node instance
+    _timer_states = {}
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {},
+            "optional": {
+                "time_format": ([
+                    "seconds",
+                    "minutes", 
+                    "hours",
+                    "HH:MM:SS",
+                    "MM:SS",
+                    "human"
+                ], {"default": "seconds"}),
+                "reset_timer": (["keep", "reset"], {"default": "keep"}),
+            }
+        }
+
+    RETURN_TYPES = ("FLOAT", "STRING", "INT", "FLOAT")
+    RETURN_NAMES = ("elapsed_seconds", "formatted_time", "execution_count", "avg_time_per_execution")
+    FUNCTION = "get_time"
+    CATEGORY = "SF/Utils"
+    DESCRIPTION = "Tracks elapsed time and execution count since start/reset. Provides various time formats."
+
+    def get_time(self, time_format="seconds", reset_timer="keep"):
+        """
+        Track elapsed time and execution count.
+        
+        Args:
+            reset: If True, reset the timer
+            time_format: How to format the time output
+        """
+        import time
+        
+        # Create a unique key for this node instance
+        node_key = id(self)  # Use object id as unique identifier
+        
+        current_time = time.time()
+        
+        # Initialize or reset the timer
+        if node_key not in self._timer_states or reset_timer == "reset":
+            self._timer_states[node_key] = {
+                "start_time": current_time,
+                "execution_count": 1
+            }
+            elapsed_seconds = 0.0
+            execution_count = 1
+        else:
+            state = self._timer_states[node_key]
+            elapsed_seconds = current_time - state["start_time"]
+            execution_count = state["execution_count"] + 1
+            state["execution_count"] = execution_count
+        
+        # Format the time based on the selected format
+        if time_format == "minutes":
+            formatted_time = f"{elapsed_seconds / 60:.2f} min"
+        elif time_format == "hours":
+            formatted_time = f"{elapsed_seconds / 3600:.2f} hrs"
+        elif time_format == "HH:MM:SS":
+            hours = int(elapsed_seconds // 3600)
+            minutes = int((elapsed_seconds % 3600) // 60)
+            seconds = int(elapsed_seconds % 60)
+            formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        elif time_format == "MM:SS":
+            minutes = int(elapsed_seconds // 60)
+            seconds = int(elapsed_seconds % 60)
+            formatted_time = f"{minutes:02d}:{seconds:02d}"
+        elif time_format == "human":
+            if elapsed_seconds < 60:
+                formatted_time = f"{elapsed_seconds:.1f}s"
+            elif elapsed_seconds < 3600:
+                formatted_time = f"{elapsed_seconds/60:.1f}m"
+            else:
+                formatted_time = f"{elapsed_seconds/3600:.1f}h"
+        else:  # seconds
+            formatted_time = f"{elapsed_seconds:.2f}s"
+        
+        # Calculate average time per execution
+        avg_time_per_execution = elapsed_seconds / execution_count if execution_count > 0 else 0.0
+        
+        return (elapsed_seconds, formatted_time, execution_count, avg_time_per_execution)

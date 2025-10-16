@@ -1,6 +1,6 @@
 # Aggregate all node class mappings for ComfyUI
 from .backend.wildcard_nodes import SFWildcardsPromptMatrix
-from .backend.image_nodes import SFPreviewImage, SFCompareImage, SFImageGrid, SFSaveImage, SFWaitForAll, SFWaitForImages, SFCombinePath, SFPathInfo, SFMakePath, SFUniqueDir, SFIncrementalPath, SFTimestampPath
+from .backend.image_nodes import SFPreviewImage, SFCompareImage, SFImageGrid, SFSaveImage, SFWaitForAll, SFWaitForImages, SFCombinePath, SFPathInfo, SFMakePath, SFUniqueDir, SFIncrementalPath, SFTimestampPath, SFOdometer, SFSequence, SFTimer
 
 
 NODE_CLASS_MAPPINGS = {
@@ -17,6 +17,9 @@ NODE_CLASS_MAPPINGS = {
     "SFUniqueDir": SFUniqueDir,
     "SFIncrementalPath": SFIncrementalPath,
     "SFTimestampPath": SFTimestampPath,
+    "SFOdometer": SFOdometer,
+    "SFSequence": SFSequence,
+    "SFTimer": SFTimer,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -33,6 +36,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "SFUniqueDir": "SF Unique Directory",
     "SFIncrementalPath": "SF Incremental Path",
     "SFTimestampPath": "SF Timestamp Path",
+    "SFOdometer": "SF Odometer",
+    "SFSequence": "SF Sequence",
+    "SFTimer": "SF Timer",
 }
 
 
