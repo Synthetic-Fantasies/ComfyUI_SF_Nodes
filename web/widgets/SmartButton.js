@@ -4,6 +4,7 @@ import { SmartWidget } from "./SmartWidget.js";
 export class SmartButton extends SmartWidget {
     constructor(x, y, width, height, node, text, options = {}) {
       super(x, y, width, height, node, options);
+      this.isSmartButton = true;
   
       this.isVisible = true;
   

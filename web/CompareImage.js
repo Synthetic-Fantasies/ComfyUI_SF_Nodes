@@ -1,6 +1,6 @@
 import { app } from "/scripts/app.js";
 import { Shapes, SFToast, SFConsoleLog } from "./Utils.js";
-import { BaseSmartWidget, BaseSmartWidgetManager,} from "./widgets/BaseSmartWidget.js";
+import { BaseSmartWidgetManager } from "./widgets/BaseSmartWidget.js";
 import { SmartButton } from "./widgets/SmartButton.js";
 
 
@@ -30,7 +30,7 @@ app.registerExtension({
     
 
     function turnAllButtonsOff() {
-      const buttons = node.widgets.filter((widget) => widget instanceof SmartButton);
+      const buttons = node.widgets.filter((widget) => widget.isSmartButton);
       buttons.forEach((b) => {
         b.isActive = false;
         b.color = b.originalColor;
@@ -178,7 +178,7 @@ app.registerExtension({
       }
 
       // await for ImagePreviewWidget
-      const previewWidget = node.widgets.find((widget) => !(widget instanceof BaseSmartWidget));
+      const previewWidget = node.widgets.find((widget) => !widget.isSmartWidget);
       for (let i = 0; i < 30 && !previewWidget; i++) {
         SFConsoleLog("wait...", i);
         await new Promise((resolve) => setTimeout(resolve, 100));

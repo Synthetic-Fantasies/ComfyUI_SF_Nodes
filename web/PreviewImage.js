@@ -1,5 +1,5 @@
 import { app } from "/scripts/app.js";
-import { BaseSmartWidget, BaseSmartWidgetManager } from "./widgets/BaseSmartWidget.js";
+import { BaseSmartWidgetManager } from "./widgets/BaseSmartWidget.js";
 import { SmartButton } from "./widgets/SmartButton.js";
 import { Shapes, SFToast } from "./Utils.js";
 import { ImageHistoryTracker } from "./ImageHistoryTracker.js";
@@ -202,7 +202,7 @@ app.registerExtension({
         imageTracker.pushToImgs(lastImage);
 
         // Override draw function in ImagePreviewWidget
-        const previewWidget = node.widgets.find((widget) => !(widget instanceof BaseSmartWidget));
+        const previewWidget = node.widgets.find((widget) => !widget.isSmartWidget);
         if (!previewWidget) {
           SFConsoleLog("ImagePreviewWidget not found");
           return;
