@@ -4,6 +4,7 @@ import { SFConsoleLog } from "../Utils.js";
 export class BaseSmartWidget {
   constructor(node) {
     this.node = node;
+    this.isSmartWidget = true;
     this._autoAddSelfToNode = true;
     this._markDelete = false;
     this._mousePos = [0, 0];
@@ -61,13 +62,6 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
     this.initEventListeners();
   }
 
-  init() {
-    Object.values(this.node.widgets).forEach((widget) => {
-      if (widget instanceof BaseSmartWidget) {
-      }
-    });
-  }
-
   addOtherWidget(widget) {
     this.otherWidgets.push(widget);
   }
@@ -112,7 +106,7 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
 
   handleMouseDown(e) {
     [...this.node.widgets, ...this.otherWidgets].forEach((widget) => {
-      if (widget instanceof BaseSmartWidget && this.node.type === this.nodeName) {
+      if (widget.isSmartWidget && this.node.type === this.nodeName) {
         widget.handleDown?.(e);
       }
     });
@@ -121,7 +115,7 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
 
   handleMouseMove(e) {
     [...this.node.widgets, ...this.otherWidgets].forEach((widget) => {
-      if (widget instanceof BaseSmartWidget && this.node.type === this.nodeName) {
+      if (widget.isSmartWidget && this.node.type === this.nodeName) {
         widget.handleMove?.(e);
       }
     });
@@ -130,7 +124,7 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
 
   handleMouseClick(e) {
     [...this.node.widgets, ...this.otherWidgets].forEach((widget) => {
-      if (widget instanceof BaseSmartWidget && this.node.type === this.nodeName) {
+      if (widget.isSmartWidget && this.node.type === this.nodeName) {
         widget.handleClick?.(e);
       }
     });
@@ -140,7 +134,7 @@ export class BaseSmartWidgetManager extends BaseSmartWidget {
 
   handleMouseDrag(e) {
     [...this.node.widgets, ...this.otherWidgets].forEach((widget) => {
-      if (widget instanceof BaseSmartWidget && this.node.type === this.nodeName) {
+      if (widget.isSmartWidget && this.node.type === this.nodeName) {
         widget.handleDrag?.(e);
       }
     });
